@@ -1,0 +1,21 @@
+{
+  "kelmarsh": {
+    "# Date and time": "timestamp",
+    "Power (kW)": "power",
+    "Wind speed (m/s)": "wind_speed",
+    "Wind direction (°)": "wind_direction",
+    "Data Availability": "availability"
+  },
+  "penmanshiel": {
+    "# Date and time": "timestamp",
+    "Power (kW)": "power",
+    "Wind speed (m/s)": "wind_speed",
+    "Wind direction (°)": "wind_direction",
+    "Data Availability": "availability"
+  },
+  "caretocompare": {
+    "time_stamp": "timestamp",
+    "asset_id": "turbine_id",
+    "id": "record_id"    
+  }
+}

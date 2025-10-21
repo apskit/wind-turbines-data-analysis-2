@@ -2,6 +2,8 @@
 
 Celem pracy jest implementacja metod przetwarzania danych SCADA pochodzących z turbin wiatrowych. W ramach przetwarzania danych zaimplementowane zostaną wybrane metody czyszczenia danych, analizy parametrów statystycznych oraz proste metody wykrywania anomalii. Dane analizowane w ramach projektu pochodzą ogólnodostępnych źródeł.
 
+## Wymagania
+Python 3.10
 
 ## Instrukcja uruchomienia
 ```bash
@@ -14,7 +16,23 @@ Celem pracy jest implementacja metod przetwarzania danych SCADA pochodzących z 
 Program pozwala na wskazanie ścieżki do folderu, w którym znajdują się pliki `.csv` zawierające dane dla kolejnych turbin. Po wczytaniu danych należy wskazać typ zestawu - Kelmarsh, Penmanshiel lub CareToCompare. Można także opcjonalnie wybrać, które parametry mają zostać załadowane wypisując je po przecinku w odpowiednim polu.
 
 ### Parametry do wyboru
-Program pozwala na unifikację nazw sygnałów. Należy stworzyć słownik JSON, na podstawie którego będą modyfikowane nazwy sygnałów.
+Program pozwala na unifikację nazw sygnałów. Należy umieścić w katalogu `config\signals_dict.json` słownik JSON, na podstawie którego będą modyfikowane nazwy sygnałów.
+
+#### Przykładowy słownik
+```json
+    {
+        "kelmarsh": {
+            "# Date and time": "timestamp",
+            "Power (kW)": "power",
+            "Wind speed (m/s)": "wind_speed",
+        },
+        "caretocompare": {
+            "time_stamp": "timestamp",
+            "asset_id": "turbine_id",
+            "id": "record_id"    
+        }
+    }
+```
 
 
 ## Wspierane zestawy danych

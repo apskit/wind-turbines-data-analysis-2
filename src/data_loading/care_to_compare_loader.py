@@ -20,11 +20,9 @@ class CareToCompareLoader(BaseLoader):
             data_frame = data_frame.dropna(subset=["time_stamp"])
             data_frame = data_frame.set_index("time_stamp")
 
-            data_frame = self.standardize_columns(data_frame, self.column_mapping)
+            mapping = self.load_column_mapping(self.dataset_type)
+            data_frame = self.standardize_columns(data_frame, mapping)
             data_frame = self.add_anomaly_column(data_frame)
-
-            turbine_id = data_frame["asset_id"]
-            data_frame["turbine_id"] = f"T{int(turbine_id):02d}"
 
             data_frame = self.select_columns(data_frame)
             all_dfs.append(data_frame)

@@ -32,9 +32,11 @@ class KelmarshLoader(BaseLoader):
                 data_frame = data_frame[data_frame["Data Availability"] == 1]
                 data_frame = data_frame.dropna(axis=1, how='all')
 
-                data_frame = self.standardize_columns(data_frame, self.column_mapping)
+                mapping = self.load_column_mapping(self.dataset_type)
+                data_frame = self.standardize_columns(data_frame, mapping)
                 data_frame = self.add_anomaly_column(data_frame)
-                data_frame["turbine_id"] = f"T{int(turbine_id):02d}"
+
+                data_frame["turbine_id"] = f"{int(turbine_id):02d}"
 
                 data_frame = self.select_columns(data_frame)
                 all_dfs.append(data_frame)
