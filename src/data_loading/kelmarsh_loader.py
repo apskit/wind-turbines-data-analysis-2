@@ -11,7 +11,7 @@ class KelmarshLoader(BaseLoader):
 
     def load_all(self) -> pd.DataFrame:
         all_dfs = []
-        csv_files = self.path.glob("*.csv")
+        csv_files = sorted(self.path.glob("*.csv"))
 
         if not csv_files:
             raise FileNotFoundError(f"No CSV files in folder: {self.path}")

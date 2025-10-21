@@ -16,9 +16,9 @@ class DataLoaderGUI:
         tk.Button(self.root, text="Select folder", command=self.select_folder).pack(pady=5)
 
         tk.Label(self.root, text="Dataset type:").pack(pady=4)
-        self.dataset_type = tk.StringVar(value="kelmarsh")
+        self.dataset_type = tk.StringVar(value="Kelmarsh")
         ttk.Combobox(self.root, textvariable=self.dataset_type,
-                     values=["kelmarsh", "caretocompare_a", "caretocompare_b", "caretocompare_c", "penmanshiel"]).pack()
+                     values=["Kelmarsh", "Penmanshiel", "CareToCompare"]).pack()
 
         tk.Label(self.root, text="Columns to load (optional):").pack(pady=4)
         self.columns_text = tk.Text(self.root, height=4, width=50)
@@ -55,7 +55,7 @@ class DataLoaderGUI:
             messagebox.showerror("Error", str(e))
 
 
-    def preview_dataframe(self, data_frame: pd.DataFrame, limit=20):
+    def preview_dataframe(self, data_frame: pd.DataFrame, limit=10):
         if data_frame is None or data_frame.empty:
             messagebox.showwarning("No data loaded", "No data to preview.")
             return
@@ -81,6 +81,10 @@ class DataLoaderGUI:
         for row in data:
             row_str = ["" if pd.isna(v) else str(v) for v in row]
             tree.insert("", "end", values=row_str)
+
+        x_scroll = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
+        x_scroll.pack(side=tk.BOTTOM, fill=tk.X)
+        tree.configure(xscrollcommand=x_scroll.set)
 
         y_scroll = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
         y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
