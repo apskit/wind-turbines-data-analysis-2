@@ -13,10 +13,10 @@ Python 3.10
 
 
 ## Wykorzystanie
-Program pozwala na wskazanie ścieżki do folderu, w którym znajdują się pliki `.csv` zawierające dane dla kolejnych turbin. Po wczytaniu danych należy wskazać typ zestawu - Kelmarsh, Penmanshiel lub CareToCompare. Można także opcjonalnie wybrać, które parametry mają zostać załadowane wypisując je po przecinku w odpowiednim polu.
+Program pozwala na wskazanie ścieżki do folderu, w którym znajdują się pliki `.csv` zawierające dane z turbin. Po wczytaniu danych należy wskazać typ zestawu - Kelmarsh, Penmanshiel lub CareToCompare. Można także opcjonalnie wybrać, które parametry mają zostać załadowane wypisując je po przecinku w odpowiednim polu.
 
 ### Parametry do wyboru
-Program pozwala na unifikację nazw sygnałów. Należy umieścić w katalogu `config\signals_dict.json` słownik JSON, na podstawie którego będą modyfikowane nazwy sygnałów.
+Program pozwala na unifikację nazw sygnałów. W tym celu należy umieścić w katalogu `config\signals_dict.json` słownik JSON, na podstawie którego będą modyfikowane nazwy sygnałów.
 
 #### Przykładowy słownik
 ```json

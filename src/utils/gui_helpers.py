@@ -2,10 +2,11 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 import pandas as pd
-from data_loading.loader_factory import get_loader
+from app_state import AppState
 
 class DataLoaderGUI:
-    def __init__(self):
+    def __init__(self, state: AppState):
+        self.app_state = state
         self.root = tk.Tk()
         self.root.title("SCADA Dataset Loader")
         self.root.geometry("480x420")
@@ -22,7 +23,7 @@ class DataLoaderGUI:
 
         tk.Label(self.root, text="Columns to load (optional):").pack(pady=4)
         self.columns_text = tk.Text(self.root, height=4, width=50)
-        self.columns_text.insert("1.0", "timestamp, wind_speed")
+        # self.columns_text.insert("1.0", "timestamp, wind_speed")
         self.columns_text.pack()
 
         tk.Button(self.root, text="Load dataset", command=self.load_data).pack(pady=15)
@@ -44,8 +45,9 @@ class DataLoaderGUI:
         columns_to_keep = [col.strip() for col in cols.split(",")] if cols else None
 
         try:
-            loader = get_loader(dataset_type, folder_path, columns_to_keep)
-            data_frame = loader.load_all()
+            self.app_state.load_dataset(dataset_type, folder_path, columns_to_keep)
+            dataset = self.app_state.get_dataset()
+            data_frame = dataset.get_dataframe()
             self.output_label.config(text=f"Loaded dataset of: {len(data_frame)} records, {len(data_frame.columns)} columns")
             messagebox.showinfo("Success", f"Successfully loaded dataset ({len(data_frame)} records).")
 
@@ -66,13 +68,31 @@ class DataLoaderGUI:
 
         preview = tk.Toplevel(self.root)
         preview.title("Data preview")
-        preview.geometry("1000x600")
+        preview.geometry("1000x350")
 
-        frame = ttk.Frame(preview)
-        frame.pack(fill=tk.BOTH, expand=True)
+        container = ttk.Frame(preview)
+        container.pack(fill=tk.BOTH, expand=True)
 
-        tree = ttk.Treeview(frame, columns=cols, show="headings")
-        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        horizontal_scroll = ttk.Scrollbar(container, orient="horizontal")
+        vertical_scroll = ttk.Scrollbar(container, orient="vertical")
+
+        tree = ttk.Treeview(
+            container,
+            columns=cols,
+            show="headings",
+            xscrollcommand=horizontal_scroll.set,
+            yscrollcommand=vertical_scroll.set
+        )
+
+        horizontal_scroll.config(command=tree.xview)
+        vertical_scroll.config(command=tree.yview)
+
+        tree.grid(row=0, column=0, sticky="nsew")
+        vertical_scroll.grid(row=0, column=1, sticky="ns")
+        horizontal_scroll.grid(row=1, column=0, sticky="ew")
+
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
 
         for col in cols:
             tree.heading(col, text=col)
@@ -81,14 +101,6 @@ class DataLoaderGUI:
         for row in data:
             row_str = ["" if pd.isna(v) else str(v) for v in row]
             tree.insert("", "end", values=row_str)
-
-        x_scroll = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
-        x_scroll.pack(side=tk.BOTTOM, fill=tk.X)
-        tree.configure(xscrollcommand=x_scroll.set)
-
-        y_scroll = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
-        y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        tree.configure(yscrollcommand=y_scroll.set)
 
         info = ttk.Label(preview, text=f"Preview of {len(preview_df)}/{len(data_frame)} records.")
         info.pack(side=tk.BOTTOM, pady=5)
