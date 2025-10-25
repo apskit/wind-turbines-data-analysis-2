@@ -52,10 +52,11 @@ class DataLoaderGUI:
             messagebox.showinfo("Success", f"Successfully loaded dataset ({len(data_frame)} records).")
 
             self.preview_dataframe(data_frame)
+            
+            DataAnalysisGUI(self.app_state)
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
-
 
     def preview_dataframe(self, data_frame: pd.DataFrame, limit=10):
         if data_frame is None or data_frame.empty:
@@ -104,3 +105,70 @@ class DataLoaderGUI:
 
         info = ttk.Label(preview, text=f"Preview of {len(preview_df)}/{len(data_frame)} records.")
         info.pack(side=tk.BOTTOM, pady=5)
+
+
+
+class DataAnalysisGUI:
+    def __init__(self, app_state):
+        self.app_state = app_state
+        self.root = tk.Toplevel()
+        self.root.title("Wind Farm Data Analysis")
+        self.root.geometry("1000x600")
+
+        ttk.Label(self.root, text="Data Analysis Overview", font=("Segoe UI", 13, "bold")).pack(pady=10)
+
+        ttk.Button(self.root, text="Run Analysis", command=self.run_analysis).pack(pady=5)
+
+        self.tabs = ttk.Notebook(self.root)
+        self.tabs.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+    def run_analysis(self):
+        dataset = self.app_state.get_dataset()
+        if not dataset:
+            messagebox.showwarning("No dataset", "Load a dataset first.")
+            return
+
+        try:
+            results = dataset.analyze_overview()
+
+            for name, df in results.items():
+                frame = ttk.Frame(self.tabs)
+                self.tabs.add(frame, text=name.replace("_", " ").title())
+
+                self.display_dataframe(df, frame)
+
+        except Exception as e:
+            messagebox.showerror("Analysis error", str(e))
+
+    def display_dataframe(self, df: pd.DataFrame, parent):
+        container = ttk.Frame(parent)
+        container.pack(fill=tk.BOTH, expand=True)
+
+        horizontal_scroll = ttk.Scrollbar(container, orient="horizontal")
+        vertical_scroll = ttk.Scrollbar(container, orient="vertical")
+
+        tree = ttk.Treeview(
+            container,
+            columns=list(df.columns),
+            show="headings",
+            xscrollcommand=horizontal_scroll.set,
+            yscrollcommand=vertical_scroll.set
+        )
+
+        horizontal_scroll.config(command=tree.xview)
+        vertical_scroll.config(command=tree.yview)
+
+        tree.grid(row=0, column=0, sticky="nsew")
+        vertical_scroll.grid(row=0, column=1, sticky="ns")
+        horizontal_scroll.grid(row=1, column=0, sticky="ew")
+
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+
+        for col in df.columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=160, anchor="center")
+
+        for _, row in df.iterrows():
+            values = [str(value) for value in row.values]
+            tree.insert("", "end", values=values)
