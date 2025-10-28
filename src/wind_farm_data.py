@@ -48,8 +48,12 @@ class WindFarmDataset:
         return pd.DataFrame(analysis_results)
 
 
-    def analyze_variable_ranges(self) -> pd.DataFrame:
+    def analyze_variable_ranges(self, turbine_id: str | None = None) -> pd.DataFrame:
         df = self.data_frame
+
+        if turbine_id and turbine_id.lower() != "all":
+            df = df[df["turbine_id"] == int(turbine_id)]
+
         df_numbers = df.select_dtypes(include=[np.number])
         variable_ranges = df_numbers.describe().transpose()
         variable_ranges = variable_ranges[["min", "max", "mean", "std"]]
@@ -58,10 +62,10 @@ class WindFarmDataset:
         return variable_ranges
 
 
-    def analyze_overview(self) -> dict:
+    def analyze_overview(self, turbine_id: str | None = None) -> dict:
         overview = {
             "availability_and_time_ranges": self.analyze_availability(),
-            "variable_ranges": self.analyze_variable_ranges(),
+            "variable_ranges": self.analyze_variable_ranges(turbine_id),
         }
         return overview
     

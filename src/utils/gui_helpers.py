@@ -53,7 +53,8 @@ class DataLoaderGUI:
 
             self.preview_dataframe(data_frame)
             
-            DataAnalysisGUI(self.app_state)
+            turbines_list = data_frame["turbine_id"].unique().tolist()
+            DataAnalysisGUI(self.app_state, turbines_list)
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
@@ -109,33 +110,70 @@ class DataLoaderGUI:
 
 
 class DataAnalysisGUI:
-    def __init__(self, app_state):
+    def __init__(self, app_state, turbines_list):
         self.app_state = app_state
+        self.analysis_frames = {}
         self.root = tk.Toplevel()
         self.root.title("Wind Farm Data Analysis")
         self.root.geometry("1000x600")
 
         ttk.Label(self.root, text="Data Analysis Overview", font=("Segoe UI", 13, "bold")).pack(pady=10)
 
-        ttk.Button(self.root, text="Run Analysis", command=self.run_analysis).pack(pady=5)
+        tk.Label(self.root, text="Turbines:").pack(pady=4)
+        selected_turbine = tk.StringVar(value="all")
+        turbines = sorted(turbines_list)
+        ttk.Combobox(self.root, textvariable=selected_turbine, values=turbines).pack(pady=4)
+
+        button_frame = ttk.Frame(self.root)
+        button_frame.pack(pady=5)
+
+        ttk.Button(
+            button_frame, 
+            text="Availability Analysis", 
+            command=lambda: self.run_analysis(type="availability")
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            button_frame, 
+            text="Variable Ranges Analysis", 
+            command=lambda: self.run_analysis(type="variable", turbine_id=selected_turbine.get())
+        ).pack(side=tk.LEFT, padx=5)
 
         self.tabs = ttk.Notebook(self.root)
         self.tabs.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-    def run_analysis(self):
+    def run_analysis(self, type: str | None = None, turbine_id: str | None = None):
         dataset = self.app_state.get_dataset()
         if not dataset:
-            messagebox.showwarning("No dataset", "Load a dataset first.")
+            messagebox.showwarning("Dataset not found", "Load a dataset first.")
             return
 
         try:
-            results = dataset.analyze_overview()
+            if type:
+                if type == "availability":
+                    analysis_key = f"availability_and_time_ranges"
+                    result_df = dataset.analyze_availability()
+                elif type == "variable":
+                    analysis_key = f"variable_ranges_{'T' + turbine_id if turbine_id.isdigit() else 'all'}"
+                    result_df = dataset.analyze_variable_ranges(turbine_id)             
+            
+                if analysis_key in self.analysis_frames:
+                    self.tabs.forget(self.analysis_frames[analysis_key])
+                    del self.analysis_frames[analysis_key]
 
-            for name, df in results.items():
                 frame = ttk.Frame(self.tabs)
-                self.tabs.add(frame, text=name.replace("_", " ").title())
+                self.analysis_frames[analysis_key] = frame
+                self.tabs.add(frame, text=analysis_key.replace("_", " ").title())
+            
+            else:
+                result_df = dataset.analyze_overview(turbine_id)
 
-                self.display_dataframe(df, frame)
+                for name, result_df in result_df.items():
+                    frame = ttk.Frame(self.tabs)
+                    self.tabs.add(frame, text=name.replace("_", " ").title())
+
+            self.display_dataframe(result_df, frame)
+            self.tabs.select(frame)
 
         except Exception as e:
             messagebox.showerror("Analysis error", str(e))

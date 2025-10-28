@@ -31,7 +31,7 @@ class CubicoLoader(BaseLoader):
                 data_frame = self.standardize_columns(data_frame, mapping)
                 data_frame = self.add_anomaly_column(data_frame)
 
-                data_frame["turbine_id"] = f"{int(turbine_id)}"
+                data_frame["turbine_id"] = int(turbine_id)
 
                 data_frame = self.select_columns(data_frame)
                 all_dfs.append(data_frame)
