@@ -10,6 +10,10 @@ class WindFarmDataset:
 
     def get_dataframe(self) -> pd.DataFrame:    
         return self.data_frame
+    
+
+    def get_turbines_list(self) -> list:
+        return self.data_frame["turbine_id"].unique().tolist()
 
 
     def analyze_availability(self) -> pd.DataFrame:
