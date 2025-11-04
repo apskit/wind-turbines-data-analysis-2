@@ -1,0 +1,5 @@
+{
+    "power": [-10, 2500],
+    "wind_speed": [0, 30],
+    "wind_direction": [0, 360]
+}

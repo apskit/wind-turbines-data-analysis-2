@@ -32,6 +32,9 @@ class WindFarmDataset:
 
             total_datapoints = len(turbine_data)
 
+            invalid_datapoints = (turbine_data["is_invalid"]).sum()
+            invalid_percent = 100 * invalid_datapoints / total_datapoints
+
             first_timestamp = turbine_data.index[0]
             last_timestamp = turbine_data.index[-1]
 
@@ -46,7 +49,8 @@ class WindFarmDataset:
                 "parameters": total_parameters,   
                 "missing_values_%": round(missing_percent, 2),
                 "datapoints": total_datapoints,
-                "data_uptime_%": round(uptime_percent, 2)
+                "data_uptime_%": round(uptime_percent, 2),
+                "invalid_datapoints_%": round(invalid_percent, 2)
             })
 
         return pd.DataFrame(analysis_results)

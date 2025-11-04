@@ -54,7 +54,7 @@ class DataLoaderGUI:
             dataset = self.app_state.get_dataset()
             data_frame = dataset.get_dataframe()
             self.output_label.config(text=f"Loaded dataset of: {len(data_frame)} records, {len(data_frame.columns)} columns")
-            messagebox.showinfo("Success", f"Successfully loaded dataset ({len(data_frame)} records).")
+            # messagebox.showinfo("Success", f"Successfully loaded dataset ({len(data_frame)} records).")
 
             if self.show_preview.get():
                 self.preview_dataframe(data_frame)

@@ -21,7 +21,8 @@ class CareToCompareLoader(BaseLoader):
             data_frame = data_frame.set_index("time_stamp")
 
             mapping = self.load_column_mapping(self.dataset_type)
-            data_frame = self.standardize_columns(data_frame, mapping)
+            data_frame = self.unify_signal_names(data_frame, mapping)
+            data_frame = self.mark_invalid_data(data_frame)
             data_frame = self.add_anomaly_column(data_frame)
 
             data_frame = self.select_columns(data_frame)
