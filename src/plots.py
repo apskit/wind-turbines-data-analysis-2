@@ -112,3 +112,59 @@ def plot_variable_histogram(df: pd.DataFrame, parameter: str, turbine_id: str = 
 
     plt.tight_layout()
     plt.show()
+
+
+def plot_variable_timeline(df: pd.DataFrame, signal: str, turbine_id: str = "all", expected_interval: str = "10min"):
+    plot_scope = get_plot_scope(turbine_id)
+
+    if turbine_id.lower() != "all":
+        selected_turbines = [int(turbine_id)]
+    else:
+        selected_turbines = df["turbine_id"].unique()
+
+    fig_height = max(4, len(selected_turbines) * 0.8)
+    fig, ax = plt.subplots(figsize=(10, fig_height), num=f"Variable Availability Plot for {signal} of {plot_scope}") 
+    y_gap = 2
+    
+    label_added = False
+    for i, id in enumerate(selected_turbines):
+        df_selected_turbine = df[df["turbine_id"] == id]
+
+        start, end = df_selected_turbine.index.min(), df_selected_turbine.index.max()
+        expected_timestamps = pd.date_range(start=start, end=end, freq=expected_interval)
+
+        full_signal_series = df_selected_turbine[signal].reindex(expected_timestamps)
+        available_mask = full_signal_series.notna() 
+    
+        available_indices = np.where(available_mask == 1)[0]
+        missing_indices = np.where(available_mask == 0)[0]
+
+        y_offset = i * y_gap
+
+        ax.scatter(expected_timestamps[available_indices], 
+                [y_offset] * len(available_indices), 
+                c="tab:blue",
+                edgecolor="tab:blue", 
+                s=160,
+                linewidth=1,
+                label="Available" if not label_added else None) 
+        
+        ax.scatter(expected_timestamps[missing_indices], 
+                [y_offset] * len(missing_indices), 
+                c="red",
+                marker='|', # s
+                s=400,
+                linewidth=2,
+                label="Unavailable" if not label_added else None)
+        
+        label_added = True
+
+    ax.set_yticks([i * y_gap for i in range(len(selected_turbines))])
+    ax.set_yticklabels([f"T{t}" for t in selected_turbines])
+    ax.set_xlabel("Time")
+    ax.set_title(f"'{signal}' Availability Over Time for {plot_scope}")
+
+    ax.legend(loc='best', bbox_to_anchor=(1, 1))
+
+    plt.tight_layout()
+    plt.show()

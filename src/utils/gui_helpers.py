@@ -3,26 +3,28 @@ from tkinter import filedialog, messagebox, ttk
 
 import pandas as pd
 from app_state import AppState
-from plots import plot_data_uptime, plot_variable_boxplot, plot_variable_histogram
+from plots import plot_data_uptime, plot_variable_boxplot, plot_variable_histogram, plot_variable_timeline
 
 class DataLoaderGUI:
     def __init__(self, state: AppState):
         self.app_state = state
         self.root = tk.Tk()
-        self.root.title("SCADA Dataset Loader")
+        self.root.title("Wind Farm Dataset Loader")
         self.root.geometry("480x420")
 
-        self.path_to_data_folder = tk.StringVar()
-        tk.Label(self.root, text="Path to dataset folder:").pack(pady=4)
-        tk.Entry(self.root, textvariable=self.path_to_data_folder, width=55).pack()
-        tk.Button(self.root, text="Select folder", command=self.select_folder).pack(pady=5)
+        ttk.Label(self.root, text="Dataset Loader", font=("Segoe UI", 13, "bold")).pack(pady=10)
 
-        tk.Label(self.root, text="Dataset type:").pack(pady=4)
+        self.path_to_data_folder = tk.StringVar()
+        ttk.Label(self.root, text="Path to dataset folder:").pack(pady=4)
+        ttk.Entry(self.root, textvariable=self.path_to_data_folder, width=55).pack()
+        ttk.Button(self.root, text="Select folder", command=self.select_folder).pack(pady=5)
+
+        ttk.Label(self.root, text="Dataset type:").pack(pady=4)
         self.dataset_type = tk.StringVar(value="Kelmarsh")
         ttk.Combobox(self.root, textvariable=self.dataset_type,
                      values=["Kelmarsh", "Penmanshiel", "CareToCompare"]).pack()
 
-        tk.Label(self.root, text="Columns to load (optional):").pack(pady=4)
+        ttk.Label(self.root, text="Columns to load (optional):").pack(pady=4)
         self.columns_text = tk.Text(self.root, height=4, width=50)
         # self.columns_text.insert("1.0", "timestamp, wind_speed")
         self.columns_text.pack()
@@ -31,7 +33,7 @@ class DataLoaderGUI:
         checkbox = tk.Checkbutton(self.root, text="Show data preview", variable=self.show_preview)
         checkbox.pack(pady=10)
 
-        tk.Button(self.root, text="Load dataset", command=self.load_data).pack(pady=15)
+        ttk.Button(self.root, text="Load dataset", command=self.load_data).pack(pady=15)
 
         self.output_label = tk.Label(self.root, text="", fg="green")
         self.output_label.pack()
@@ -158,6 +160,12 @@ class DataAnalysisGUI:
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
+            button_frame, 
+            text="Plot Variable Availability", 
+            command=self.on_plot_timeline
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
             button_frame,
             text="Plot Variable Ranges Boxplot",
             command=self.on_plot_boxplot
@@ -252,14 +260,21 @@ class DataAnalysisGUI:
       
     def on_plot_boxplot(self):
         if not self.selected_parameter:
-            messagebox.showwarning("No parameter selected", "Select a parameter from Variable Analysis tab first.")
+            messagebox.showwarning("No parameter selected", "Select signal from Variable Analysis tab first.")
             return
         turbine = self.selected_turbine.get()
         plot_variable_boxplot(self.df, self.selected_parameter, turbine)
 
     def on_plot_histogram(self):
         if not self.selected_parameter:
-            messagebox.showwarning("No parameter selected", "Select a parameter from Variable Analysis tab first.")
+            messagebox.showwarning("No parameter selected", "Select signal from Variable Analysis tab first.")
             return
         turbine = self.selected_turbine.get()
         plot_variable_histogram(self.df, self.selected_parameter, turbine)
+
+    def on_plot_timeline(self):
+        if not self.selected_parameter:
+            messagebox.showwarning("No parameter selected", "Select signal from Variable Ranges tab first.")
+            return
+        turbine = self.selected_turbine.get()
+        plot_variable_timeline(self.df, self.selected_parameter, turbine)

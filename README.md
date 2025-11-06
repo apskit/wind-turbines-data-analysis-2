@@ -14,7 +14,7 @@ Python 3.10
 
 ## Wykorzystanie
 ### Wczytywanie danych
-Program pozwala na wskazanie ścieżki do folderu, w którym znajdują się pliki `.csv` zawierające dane z turbin. Po wczytaniu danych należy wskazać typ zestawu - Kelmarsh, Penmanshiel lub CareToCompare. Można także opcjonalnie wybrać, które parametry mają zostać załadowane wypisując je po przecinku w odpowiednim polu. Wczytywane dane są standaryzowane, a błędne wartości usuwane. Punkty czasowe zawierające parametry przekraczające dopuszczalne wartości są oznaczane jako nieprawidłowe.
+Program pozwala na wskazanie ścieżki do folderu, w którym znajdują się pliki `.csv` zawierające dane z turbin. Po wczytaniu danych należy wskazać typ zestawu - Kelmarsh, Penmanshiel lub CareToCompare. Można także opcjonalnie wybrać, które parametry mają zostać załadowane wypisując je po przecinku w odpowiednim polu. Wczytywane dane są standaryzowane, a błędne wartości usuwane. Punkty czasowe zawierające parametry przekraczające dopuszczalne wartości są oznaczane jako nieprawidłowe. Pojedyncze brakujące wartości są uzupełniane metodą interpolacji liniowej (docelowo KNN).
 
 ### Analiza danych
 Po wczytaniu program pozwala na przeprowadzenie analizy danych po względem:
@@ -36,6 +36,7 @@ Po wczytaniu program pozwala na przeprowadzenie analizy danych po względem:
 ### Wizualizacja
 Program pozwala na generowanie wykresów:
 - dostępności danych w czasie
+- dostępność wartości sygnałów w czasie
 - zakresu zmiennych - Boxplot/Histogram
 
 ### Parametry do wyboru

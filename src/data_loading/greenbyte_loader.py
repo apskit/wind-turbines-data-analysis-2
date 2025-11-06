@@ -3,7 +3,7 @@ import pandas as pd
 from .base_loader import BaseLoader
 
 
-class CubicoLoader(BaseLoader):
+class GreenbyteLoader(BaseLoader):
     def load_all(self) -> pd.DataFrame:
         all_dfs = []
         csv_files = sorted(self.path.glob("*.csv"))
@@ -27,10 +27,7 @@ class CubicoLoader(BaseLoader):
                 data_frame = data_frame[data_frame["Data Availability"] == 1]
                 data_frame = data_frame.dropna(axis=1, how='all')
 
-                mapping = self.load_column_mapping(self.dataset_type)
-                data_frame = self.unify_signal_names(data_frame, mapping)
-                data_frame = self.mark_invalid_data(data_frame)
-                data_frame = self.add_anomaly_column(data_frame)
+                data_frame = self.standarize_dataset(data_frame)
 
                 data_frame["turbine_id"] = int(turbine_id)
 
