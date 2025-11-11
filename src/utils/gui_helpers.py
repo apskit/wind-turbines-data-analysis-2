@@ -4,6 +4,7 @@ from tkinter import filedialog, messagebox, ttk
 import pandas as pd
 from app_state import AppState
 from plots import plot_data_uptime, plot_variable_boxplot, plot_variable_histogram, plot_variable_timeline
+from wind_farm_data import WindFarmDataset
 
 class DataLoaderGUI:
     def __init__(self, state: AppState):
@@ -117,7 +118,7 @@ class DataLoaderGUI:
 
 
 class DataAnalysisGUI:
-    def __init__(self, app_state, dataset):
+    def __init__(self, app_state: AppState, dataset: WindFarmDataset):
         self.app_state = app_state
         self.df = dataset.get_dataframe()
         self.selected_parameter = None
@@ -137,6 +138,7 @@ class DataAnalysisGUI:
         turbines_list = dataset.get_turbines_list()
         turbines = ["all"] + sorted(turbines_list)
         ttk.Combobox(options_frame, textvariable=self.selected_turbine, values=turbines).pack(side=tk.LEFT, pady=6)
+
 
         button_frame = ttk.Frame(self.root)
         button_frame.pack(pady=5)
@@ -176,6 +178,24 @@ class DataAnalysisGUI:
             text="Plot Variable Ranges Histogram",
             command=self.on_plot_histogram
         ).pack(side=tk.LEFT, padx=5)
+
+
+        normalization_frame = ttk.Frame(self.root)
+        normalization_frame.pack(pady=5)
+
+        tk.Label(normalization_frame, text="Dataset for plotting:").pack(side=tk.LEFT, pady=6)
+        self.selected_dataset = tk.StringVar(value="preprocessed")
+        datasets_list = ["preprocessed", "z-score normalization", "min-max normalization", "robust scaling"]
+        ttk.Combobox(normalization_frame, textvariable=self.selected_dataset, values=datasets_list).pack(side=tk.LEFT, pady=6)
+
+        ttk.Button(
+            normalization_frame, 
+            text="Change", 
+            command=lambda: self.change_dataset(dataset, type=self.selected_dataset.get())
+        ).pack(side=tk.LEFT, padx=5)
+
+        self.dataset_change_label = tk.Label(normalization_frame, text="", fg="green")
+        self.dataset_change_label.pack()
 
         self.tabs = ttk.Notebook(self.root)
         self.tabs.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -278,3 +298,16 @@ class DataAnalysisGUI:
             return
         turbine = self.selected_turbine.get()
         plot_variable_timeline(self.df, self.selected_parameter, turbine)
+
+    def change_dataset(self, dataset: WindFarmDataset, type: str):
+        if type == "preprocessed":
+            self.df = dataset.get_dataframe()
+
+        else:
+            normalization_type = type.split()[0].lower().replace('-', '_')
+            dataset.normalize_data(normalization_type)
+            
+            self.df = dataset.get_dataframe_normalized() 
+        
+        self.dataset_change_label.config(text=f"Loaded {type} dataset")
+

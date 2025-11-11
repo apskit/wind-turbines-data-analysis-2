@@ -1,19 +1,34 @@
 import numpy as np
 import pandas as pd
 
+from utils.file_handler import load_signal_ranges
+
 
 class WindFarmDataset:
     def __init__(self, data_frame: pd.DataFrame, dataset_type: str):
         self.name = dataset_type
         self.data_frame = data_frame
+        self.normalized_data_frame = None
+        self.id_cols = ["turbine_id", "record_id", "status_type_id"]
 
 
     def get_dataframe(self) -> pd.DataFrame:    
         return self.data_frame
     
 
+    def get_dataframe_normalized(self) -> pd.DataFrame:    
+        return self.normalized_data_frame
+    
+
     def get_turbines_list(self) -> list:
         return self.data_frame["turbine_id"].unique().tolist()
+    
+
+    def get_numeric_cols_list(self) -> list[str]:
+        num_cols = self.data_frame.select_dtypes(include=[np.number]).columns
+        num_cols = [col for col in num_cols if col not in self.id_cols]
+        
+        return num_cols
 
 
     def analyze_availability(self) -> pd.DataFrame:
@@ -62,7 +77,8 @@ class WindFarmDataset:
         if turbine_id and turbine_id.lower() != "all":
             df = df[df["turbine_id"] == int(turbine_id)]
 
-        df_numbers = df.select_dtypes(include=[np.number])
+        num_cols = self.get_numeric_cols_list()
+        df_numbers = df[num_cols]
         variable_ranges = df_numbers.describe().transpose()
         variable_ranges = variable_ranges[["min", "max", "mean", "std"]]
         variable_ranges.reset_index(inplace=True)
@@ -77,3 +93,67 @@ class WindFarmDataset:
         }
         return overview
     
+
+    def create_outliers_mask(self):
+        df = self.data_frame
+        signals_ranges = load_signal_ranges()
+        self.outliers_mask = pd.DataFrame(False, index=df.index, columns=df.columns)
+
+        for col, (min_val, max_val) in signals_ranges.items():
+            if col in df.columns:
+                valid_mask = df[col].notna() & (df[col] >= min_val) & (df[col] <= max_val)
+                self.outliers_mask[col] = ~valid_mask
+    
+
+    def normalize_data(self, normalization_type: str):
+        self.create_outliers_mask()
+
+        df_scaled = self.data_frame.copy()
+        num_cols = self.get_numeric_cols_list()
+
+        for col in num_cols:
+            outlier_mask = self.outliers_mask[col]
+            df_scaled.loc[outlier_mask, col] = np.nan
+
+        if (normalization_type == "robust"):
+            for col in num_cols:
+                col_vals = df_scaled[col]
+                mask_valid = (~col_vals.isna())
+
+                median = col_vals[mask_valid].median()
+                q1 = col_vals[mask_valid].quantile(0.25)
+                q3 = col_vals[mask_valid].quantile(0.75)
+                iqr = q3 - q1
+                if iqr == 0:
+                    iqr = col_vals[mask_valid].std()
+
+                df_scaled.loc[mask_valid, col] = (col_vals[mask_valid] - median) / iqr
+
+        elif (normalization_type == "z_score"):
+            for col in num_cols:
+                col_vals = df_scaled[col]
+                mask_valid = (~col_vals.isna())
+
+                mean = col_vals[mask_valid].mean()
+                std = col_vals[mask_valid].std()
+                if std == 0:
+                    continue
+
+                df_scaled.loc[mask_valid, col] = (col_vals[mask_valid] - mean) / std
+
+        elif (normalization_type == "min_max"):
+            for col in num_cols:
+                col_vals = df_scaled[col]
+                mask_valid = (~col_vals.isna())
+
+                min_val = col_vals[mask_valid].min()
+                max_val = col_vals[mask_valid].max()
+
+                df_scaled.loc[mask_valid, col] = (
+                    (col_vals[mask_valid] - min_val) / (max_val - min_val)
+                )
+
+        else:
+            raise ValueError(f"Unknown normalization type: {normalization_type}")
+
+        self.normalized_data_frame = df_scaled

@@ -1,7 +1,8 @@
-import json
 from pathlib import Path
 import pandas as pd
 from sklearn.impute import KNNImputer
+
+from utils.file_handler import load_column_mapping, load_signal_ranges
 
 
 class BaseLoader:
@@ -16,7 +17,7 @@ class BaseLoader:
 
 
     def standarize_dataset(self, df: pd.DataFrame) -> pd.DataFrame:
-        mapping = self.load_column_mapping(self.dataset_type)
+        mapping = load_column_mapping(self.dataset_type)
 
         df = self.unify_signal_names(df, mapping)
         df = self.mark_invalid_data(df)
@@ -30,31 +31,13 @@ class BaseLoader:
         return df.rename(columns=mapping)
     
 
-    def load_column_mapping(self, dataset_name: str) -> dict:
-        dict_path = "config/signals_dict.json"
-
-        with open(dict_path, "r", encoding="utf-8") as signals_dict:
-            mappings = json.load(signals_dict)
-            
-        return mappings.get(dataset_name.lower(), {})
-    
-
-    def load_signal_ranges(self) -> dict[str, list[float]]:
-        path = "config/signals_ranges.json"
-
-        with open(path, 'r', encoding="utf-8") as signals_ranges:
-            ranges = json.load(signals_ranges)
-
-        return ranges
-
-
     def add_anomaly_column(self, df: pd.DataFrame) -> pd.DataFrame:
         df["anomaly"] = False
         return df
 
 
     def mark_invalid_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        signals_ranges = self.load_signal_ranges()
+        signals_ranges = load_signal_ranges()
         invalid_mask = pd.Series(False, index=df.index)
 
         for col, (min_val, max_val) in signals_ranges.items():
