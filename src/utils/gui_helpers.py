@@ -3,7 +3,7 @@ from tkinter import filedialog, messagebox, ttk
 
 import pandas as pd
 from app_state import AppState
-from plots import plot_data_uptime, plot_variable_boxplot, plot_variable_histogram, plot_variable_timeline
+from plots import plot_correlation_matrix, plot_data_uptime, plot_variable_boxplot, plot_variable_histogram, plot_variable_timeline
 from wind_farm_data import WindFarmDataset
 
 class DataLoaderGUI:
@@ -120,6 +120,7 @@ class DataLoaderGUI:
 class DataAnalysisGUI:
     def __init__(self, app_state: AppState, dataset: WindFarmDataset):
         self.app_state = app_state
+        self.dataset = dataset
         self.df = dataset.get_dataframe()
         self.selected_parameter = None
 
@@ -182,6 +183,25 @@ class DataAnalysisGUI:
 
         normalization_frame = ttk.Frame(self.root)
         normalization_frame.pack(pady=5)
+
+        ttk.Button(
+            normalization_frame, 
+            text="Plot Correlation Matrix", 
+            command=lambda: [dataset.set_correlation_matrix(), plot_correlation_matrix(dataset.get_correlation_matrix())]
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            normalization_frame, 
+            text="Correlation Analysis", 
+            command=lambda: self.run_correlation_analysis(preview=True)
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            normalization_frame, 
+            text="Remove Correlated Signals", 
+            command=lambda: self.run_correlation_analysis(preview=False)
+        ).pack(side=tk.LEFT, padx=5)
+        tk.Label(normalization_frame, text="  |  ").pack(side=tk.LEFT, pady=6)
 
         tk.Label(normalization_frame, text="Dataset for plotting:").pack(side=tk.LEFT, pady=6)
         self.selected_dataset = tk.StringVar(value="preprocessed")
@@ -310,4 +330,39 @@ class DataAnalysisGUI:
             self.df = dataset.get_dataframe_normalized() 
         
         self.dataset_change_label.config(text=f"Loaded {type} dataset")
+
+
+    def run_correlation_analysis(self, preview: bool = True):
+        try:
+            correlation_analysis = self.dataset.remove_correlated_signals(threshold=0.95, preview=preview)
+
+            if preview:
+                analysis_key = f"correlation_preview"
+                if analysis_key in self.analysis_frames:
+                    self.tabs.forget(self.analysis_frames[analysis_key])
+                    del self.analysis_frames[analysis_key]
+
+                frame = ttk.Frame(self.tabs)
+                self.analysis_frames[analysis_key] = frame
+                self.tabs.add(frame, text="Correlation Removal Preview")
+
+                results_for_df = []
+                for rep, removed_list in correlation_analysis["representatives_map"].items():
+                    results_for_df.append({
+                        "Representatives": rep,
+                        "To remove": ", ".join(removed_list)
+                    })
+                
+                df_result = pd.DataFrame(results_for_df)
+                self.display_dataframe(df_result, frame)
+                self.tabs.select(frame)
+
+            else:
+                self.df = self.dataset.get_dataframe()
+                messagebox.showinfo("Correlation Removal Completed",
+                    f"Removed {len(correlation_analysis['to_remove'])} correlated signals."
+                )
+
+        except Exception as e:
+            messagebox.showerror("Correlation analysis error", str(e))
 

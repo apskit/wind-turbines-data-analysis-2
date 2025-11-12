@@ -33,6 +33,8 @@ Po wczytaniu program pozwala na przeprowadzenie analizy danych po względem:
 - zakresów zmiennych:
     - zakresy wartości
 
+W oknie Analizy dostępne są także opcje wizualizacji. Można je wywoływać dla danych wstępnie przetworzonych lub znormalizowanych wybraną metodą. Narzędzie do analizy korelacji pozwala na wizualizację macierzy korelacji oraz usuwanie sygnałów silnie skorelowanych, wraz z ich podglądem w formie analizy sygnałów reprezentatywnych i sygnałów  z nimi skorelowanych.
+
 ### Wizualizacja
 Program pozwala na generowanie wykresów:
 - dostępności danych w czasie

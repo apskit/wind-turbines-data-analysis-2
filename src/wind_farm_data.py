@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from scipy.cluster.hierarchy import linkage, fcluster
+from scipy.spatial.distance import squareform
 
 from utils.file_handler import load_signal_ranges
 
@@ -9,7 +11,9 @@ class WindFarmDataset:
         self.name = dataset_type
         self.data_frame = data_frame
         self.normalized_data_frame = None
+        self.correlation_matrix = None
         self.id_cols = ["turbine_id", "record_id", "status_type_id"]
+        self.core_features = ["timestamp", "turbine_id", "is_invalid"]
 
 
     def get_dataframe(self) -> pd.DataFrame:    
@@ -29,6 +33,9 @@ class WindFarmDataset:
         num_cols = [col for col in num_cols if col not in self.id_cols]
         
         return num_cols
+    
+    def get_correlation_matrix(self) -> pd.DataFrame:
+        return self.correlation_matrix
 
 
     def analyze_availability(self) -> pd.DataFrame:
@@ -157,3 +164,75 @@ class WindFarmDataset:
             raise ValueError(f"Unknown normalization type: {normalization_type}")
 
         self.normalized_data_frame = df_scaled
+
+    
+    def set_correlation_matrix(self, method: str = "pearson"):
+        if method == "pearson":
+            num_cols = self.get_numeric_cols_list()
+            self.correlation_matrix = self.data_frame[num_cols].corr(method=method, min_periods=500)
+
+
+    def remove_correlated_signals(self, threshold: float = 0.95, preview: bool = True):
+        numeric_cols = self.get_numeric_cols_list()
+        df = self.data_frame[numeric_cols].copy()
+        cols = df.columns
+
+        if not isinstance(self.correlation_matrix, pd.DataFrame) or self.correlation_matrix.empty:
+            self.set_correlation_matrix()
+
+        corr = self.get_correlation_matrix().abs()
+
+        corr = corr.dropna(axis=0, how='all').dropna(axis=1, how='all')
+        corr = corr.fillna(0)
+        np.fill_diagonal(corr.values, 1.0)
+        cols = corr.columns
+
+        # passing hierarchical clustering
+        dist_matrix = 1 - corr
+        np.fill_diagonal(dist_matrix.values, 0.0)
+
+        # upper triangle
+        condensed = dist_matrix.values[np.triu_indices_from(dist_matrix.values, k=1)]
+        condensed[condensed < 0] = 0
+
+        linkage_matrix = linkage(condensed, method='average')
+
+        # clusters forming
+        cluster_labels = fcluster(linkage_matrix, t=1 - threshold, criterion='distance')
+
+        representatives = []
+        to_remove = []
+        representatives_map = {}
+
+        for cluster_id in np.unique(cluster_labels):
+            members = cols[cluster_labels == cluster_id].tolist()
+
+            if len(members) == 1:
+                representatives.append(members[0])
+                continue
+
+            # best signal choice
+            sub_df = df[members]
+
+            # highest variance
+            rep = sub_df.var().idxmax()
+
+            to_remove_in_cluster = [c for c in members if c != rep]
+            representatives_map[rep] = to_remove_in_cluster
+
+            representatives.append(rep)
+            to_remove.extend([c for c in members if c != rep])
+
+        result = {
+            "n_clusters": len(np.unique(cluster_labels)),
+            "representatives_map": representatives_map,
+            "representatives": representatives,
+            "to_remove": to_remove,
+            "threshold": threshold
+        }
+
+        if not preview:
+            to_remove = [c for c in to_remove if c not in self.core_features]
+            self.data_frame.drop(columns=to_remove, inplace=True)
+
+        return result

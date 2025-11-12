@@ -168,3 +168,22 @@ def plot_variable_timeline(df: pd.DataFrame, signal: str, turbine_id: str = "all
 
     plt.tight_layout()
     plt.show()
+
+
+def plot_correlation_matrix(correlation_matrix: pd.DataFrame, plot_labels=True):
+    fig, ax = plt.subplots(figsize=(9, 7))
+    cax = ax.matshow(correlation_matrix)
+    fig.colorbar(cax)
+
+    if plot_labels:
+        short_labels = [col[:14] for col in correlation_matrix.columns]
+
+        ax.set_xticks(range(correlation_matrix.shape[1]))
+        ax.set_xticklabels(short_labels, fontsize=7, rotation=85)
+
+        ax.set_yticks(range(correlation_matrix.shape[0]))
+        ax.set_yticklabels(short_labels, fontsize=7)
+
+    plt.title('Correlation Matrix')
+    plt.tight_layout()
+    plt.show()
