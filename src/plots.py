@@ -187,3 +187,47 @@ def plot_correlation_matrix(correlation_matrix: pd.DataFrame, plot_labels=True):
     plt.title('Correlation Matrix')
     plt.tight_layout()
     plt.show()
+
+
+def plot_variable_timeseries(df: pd.DataFrame, parameter: str, mask: pd.DataFrame, turbine_id: str = "all"):
+    if turbine_id.lower() != "all":
+        turbine_filter = df["turbine_id"] == int(turbine_id)
+        
+        df = df[turbine_filter]
+        mask = mask[turbine_filter]
+
+    plot_scope = get_plot_scope(turbine_id)
+    title = f"Time Series of {parameter} for {plot_scope}"
+
+    values = df[parameter]
+    timestamps = df.index
+
+    if parameter in mask.columns:
+        anomaly_points = mask[parameter].loc[df.index]
+    else:
+        anomaly_points = pd.Series(False, index=df.index)
+
+    anomalies_x = timestamps[anomaly_points]
+    anomalies_y = values[anomaly_points]
+
+    fig, ax = plt.subplots(figsize=(12, 5), num=f"Time Series of {parameter} ({plot_scope})")
+
+    ax.plot(timestamps, values, label=parameter, color="tab:blue")
+
+    ax.scatter(
+        anomalies_x,
+        anomalies_y,
+        color="red",
+        s=25,
+        label="Anomalies",
+        zorder=5
+    )
+
+    ax.set_title(title)
+    ax.set_xlabel("Time")
+    ax.set_ylabel(parameter)
+    ax.grid(True, linestyle="--", alpha=0.3)
+    ax.legend(loc="best")
+
+    plt.tight_layout()
+    plt.show()

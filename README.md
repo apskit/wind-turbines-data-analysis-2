@@ -33,13 +33,20 @@ Po wczytaniu program pozwala na przeprowadzenie analizy danych po względem:
 - zakresów zmiennych:
     - zakresy wartości
 
-W oknie Analizy dostępne są także opcje wizualizacji. Można je wywoływać dla danych wstępnie przetworzonych lub znormalizowanych wybraną metodą. Narzędzie do analizy korelacji pozwala na wizualizację macierzy korelacji oraz usuwanie sygnałów silnie skorelowanych, wraz z ich podglądem w formie analizy sygnałów reprezentatywnych i sygnałów  z nimi skorelowanych.
+W oknie Analizy dostępne są także opcje wizualizacji. Można je wywoływać dla danych wstępnie przetworzonych lub znormalizowanych wybraną metodą. Narzędzie do analizy korelacji pozwala na wizualizację macierzy korelacji oraz usuwanie sygnałów silnie skorelowanych, wraz z ich podglądem w formie analizy sygnałów reprezentatywnych i sygnałów z nimi skorelowanych.
 
 ### Wizualizacja
 Program pozwala na generowanie wykresów:
 - dostępności danych w czasie
 - dostępność wartości sygnałów w czasie
 - zakresu zmiennych - Boxplot/Histogram
+- macierzy korelacji
+
+### Wykrywanie anomallii
+W oknie Anomallii dostępne są także opcje wykrywania anomallii wybraną metodą. Program tworzy dla danych maskę z danymi uważanymi za anomalie oraz oznacza w oryginalnych danych wiersze, w których one występują. W odpowiedniej zakładce wyświetla się raport prezentujący ilości znalezionych anomalii w zestawie dla każdego sygnału. Po wyborze sygnału oraz turbiny możliwa jest wizualizacja typu Time Series, wraz z oznaczonymi anomaliami. Funkcja usuwania zastępuje wszystkie punkty w zestawie oznaczone jako anomalie wartościami NaN.
+
+Program pozwala wykrywanie anomalii metodami:
+- IQR - na podstawie wartości odstających
 
 ### Parametry do wyboru
 Program pozwala na unifikację nazw sygnałów. W tym celu należy umieścić w katalogu `config\signals_dict.json` słownik JSON, na podstawie którego będą modyfikowane nazwy sygnałów.
