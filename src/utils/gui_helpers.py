@@ -391,8 +391,12 @@ class AnomalyDetectionGUI:
 
         tk.Label(detection_frame, text="Method:").pack(side=tk.LEFT, pady=6)
         self.selected_method = tk.StringVar(value="IQR")
-        datasets_list = ["IQR", "Isolation Forest", "TBD"]
+        datasets_list = ["IQR", "Isolation Forest", "DBSCAN (TODO)"]
         ttk.Combobox(detection_frame, textvariable=self.selected_method, values=datasets_list).pack(side=tk.LEFT, pady=6)
+
+        ttk.Label(detection_frame, text=" Contamination (IF):").pack(side=tk.LEFT, pady=6)
+        self.contamination_var = tk.StringVar(value="0.01")
+        self.entry = ttk.Entry(detection_frame, textvariable=self.contamination_var, width=5).pack(side=tk.LEFT, pady=6)
 
         ttk.Button(
             detection_frame, 
@@ -432,6 +436,17 @@ class AnomalyDetectionGUI:
                 row_mask, cell_mask = self.detector.detect_outliers_iqr()
                 analysis_key = "iqr_anomalies"
                 tab_name = "IQR Anomalies"
+
+            elif method == "Isolation Forest":
+                contamination = float(self.contamination_var.get())
+                row_mask, cell_mask = self.detector.detect_isolation_forest(contamination)
+                analysis_key = "isolation_forest"
+                tab_name = "Isolation Forest Anomalies"
+
+            elif method == "DBSCAN":
+                row_mask, cell_mask = self.detector.detect_dbscan()
+                analysis_key = "dbscan"
+                tab_name = "DBSCAN Anomalies"
 
             result_df = self.prepare_results_table(row_mask, cell_mask)
             self.cell_mask = cell_mask

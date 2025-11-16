@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from sklearn.ensemble import IsolationForest
 
 
 class AnomalyDetector:
@@ -12,6 +13,7 @@ class AnomalyDetector:
 
 
     def detect_outliers_iqr(self, factor: float = 1.5) -> tuple[pd.Series, pd.DataFrame]:
+        self.df = self.dataset.get_dataframe()
         num_cols = self.dataset.get_numeric_cols_list()
 
         anomaly_mask_rows = pd.Series(False, index=self.df.index)
@@ -61,8 +63,46 @@ class AnomalyDetector:
         return anomaly_mask_rows, anomaly_mask_cells
 
 
-    def detect_isolation_forest(self) -> pd.Series:
-        pass
+    def detect_isolation_forest(self, contamination: float = 0.01) -> tuple[pd.Series, pd.DataFrame]:
+        self.df = self.dataset.get_dataframe()
+        num_cols = self.dataset.get_numeric_cols_list()
+        anomaly_mask_rows = pd.Series(False, index=self.df.index)
+        anomaly_mask_cells = pd.DataFrame(False, index=self.df.index, columns=num_cols)
+        
+        for turbine_id, group in self.df.groupby("turbine_id"):
+            idx = group.index
+            input_sample = group[num_cols]
+            # input_sample = input_sample.fillna(input_sample.median())
+
+            model = IsolationForest(
+                contamination=contamination, # 'auto'
+                random_state=42,
+                n_estimators=200,
+                bootstrap=False,
+                )
+            
+            preds = model.fit_predict(input_sample)
+            
+            row_mask = pd.Series(preds == -1, index=idx)
+            anomaly_mask_rows.loc[idx] |= row_mask
+
+            cell_mask_local = pd.DataFrame(False, index=idx, columns=num_cols)
+            cell_mask_local.loc[row_mask.index[row_mask], :] = True
+            anomaly_mask_cells.loc[idx, num_cols] = cell_mask_local[num_cols]
+
+        self.df["anomaly"] |= anomaly_mask_rows
+
+        self.masks["iforest_row"] = anomaly_mask_rows
+        self.masks["iforest_cell"] = anomaly_mask_cells
+
+        self.stats["iforest"] = {
+            "total_rows": len(self.df),
+            "anomalous_rows": int(anomaly_mask_rows.sum()),
+            "percentage_anomalous_rows": float(anomaly_mask_rows.sum() / len(self.df) * 100),
+            "anomalous_cells": int(anomaly_mask_cells.sum().sum()),
+        }
+
+        return anomaly_mask_rows, anomaly_mask_cells
 
 
     def apply_mask(self, mask_name: str) -> int:
