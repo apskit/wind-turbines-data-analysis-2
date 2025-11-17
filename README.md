@@ -48,6 +48,7 @@ W oknie Anomallii dostępne są także opcje wykrywania anomallii wybraną metod
 Program pozwala wykrywanie anomalii metodami:
 - IQR - na podstawie wartości odstających
 - Isolation Forest
+- DBSCAN
 
 ### Parametry do wyboru
 Program pozwala na unifikację nazw sygnałów. W tym celu należy umieścić w katalogu `config\signals_dict.json` słownik JSON, na podstawie którego będą modyfikowane nazwy sygnałów.

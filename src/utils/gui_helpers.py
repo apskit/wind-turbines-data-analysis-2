@@ -391,7 +391,7 @@ class AnomalyDetectionGUI:
 
         tk.Label(detection_frame, text="Method:").pack(side=tk.LEFT, pady=6)
         self.selected_method = tk.StringVar(value="IQR")
-        datasets_list = ["IQR", "Isolation Forest", "DBSCAN (TODO)"]
+        datasets_list = ["IQR", "Isolation Forest", "DBSCAN"]
         ttk.Combobox(detection_frame, textvariable=self.selected_method, values=datasets_list).pack(side=tk.LEFT, pady=6)
 
         ttk.Label(detection_frame, text=" Contamination (IF):").pack(side=tk.LEFT, pady=6)
@@ -487,7 +487,8 @@ class AnomalyDetectionGUI:
         try:
             mask_map = {
                 "IQR": "iqr_cell",
-                "isolation forest": "iforest_cell"
+                "Isolation Forest": "iforest_cell",
+                "DBSCAN": "dbscan_cell"
             }
 
             if method not in mask_map:
