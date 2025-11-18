@@ -1,4 +1,3 @@
-import time
 import numpy as np
 import pandas as pd
 from sklearn.cluster import DBSCAN
@@ -15,6 +14,8 @@ class AnomalyDetector:
 
         self.masks: dict[str, pd.Series] = {}
         self.stats: dict[str, dict] = {}
+        self.scores: dict[str, dict[str, pd.Series]] = {}
+        self.row_masks: dict[str, dict[str, pd.Series]] = {}
 
 
     def detect_outliers_iqr(self, factor: float = 1.5) -> tuple[pd.Series, pd.DataFrame]:
@@ -73,7 +74,9 @@ class AnomalyDetector:
         num_cols = self.dataset.get_numeric_cols_list()
         anomaly_mask_rows = pd.Series(False, index=self.df.index)
         anomaly_mask_cells = pd.DataFrame(False, index=self.df.index, columns=num_cols)
-        
+        self.scores.setdefault("iforest", {})
+        self.row_masks.setdefault("iforest", {})
+
         for turbine_id, group in self.df.groupby("turbine_id"):
             group_index = group.index
             input_sample = group[num_cols]
@@ -87,13 +90,18 @@ class AnomalyDetector:
                 )
             
             preds = model.fit_predict(input_sample)
-            
+            decision_scores = model.decision_function(input_sample)
+
             row_mask = pd.Series(preds == -1, index=group_index)
             anomaly_mask_rows.loc[group_index] |= row_mask
 
             cell_mask_local = pd.DataFrame(False, index=group_index, columns=num_cols)
             cell_mask_local.loc[row_mask.index[row_mask], :] = True
             anomaly_mask_cells.loc[group_index, num_cols] = cell_mask_local[num_cols]
+
+            score_series = pd.Series(decision_scores, index=group_index)
+            self.row_masks["iforest"][str(turbine_id)] = row_mask
+            self.scores["iforest"][str(turbine_id)] = score_series
 
         self.df["anomaly"] |= anomaly_mask_rows
 
@@ -126,6 +134,8 @@ class AnomalyDetector:
 
         anomaly_mask_rows = pd.Series(False, index=self.df.index)
         anomaly_mask_cells = pd.DataFrame(False, index=self.df.index, columns=num_cols)
+        self.scores.setdefault("dbscan", {})
+        self.row_masks.setdefault("dbscan", {})
 
         for turbine_id, group in self.df.groupby("turbine_id"):
             group_index = group.index
@@ -159,6 +169,23 @@ class AnomalyDetector:
 
             anomalous_indices = row_mask_series[row_mask_series].index       
             anomaly_mask_cells.loc[anomalous_indices, :] = True
+
+            distances = np.zeros(len(input_sample))
+            core_mask = (labels != -1)
+            if core_mask.sum() > 0:
+                core_points = input_sample[core_mask]
+                neighbours = NearestNeighbors(n_neighbors=1).fit(core_points)
+                dist, _ = neighbours.kneighbors(input_sample)
+                distances = dist.flatten()
+            else:
+                distances[:] = 1
+
+            distances = distances / distances.max()
+
+            score_series = pd.Series(distances, index=group_index)
+
+            self.row_masks["dbscan"][str(turbine_id)] = row_mask_series
+            self.scores["dbscan"][str(turbine_id)] = score_series
 
         self.df["anomaly"] |= anomaly_mask_rows
 

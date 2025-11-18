@@ -231,3 +231,28 @@ def plot_variable_timeseries(df: pd.DataFrame, parameter: str, mask: pd.DataFram
 
     plt.tight_layout()
     plt.show()
+
+
+def plot_anomaly_score_timeseries(df: pd.DataFrame, scores: pd.Series, row_mask: pd.Series, turbine_id: str, method: str):
+    df = df[df["turbine_id"] == int(turbine_id)]
+    
+    scores = scores.loc[df.index]
+    row_mask = row_mask.loc[df.index]
+
+    normal = df.loc[~row_mask]
+    anomalies = df.loc[row_mask]
+
+    plot_scope = get_plot_scope(turbine_id)
+    title = f"Anomaly scores of {method} for {plot_scope}"
+
+    plt.figure(figsize=(10, 5))
+    plt.scatter(normal.index, scores.loc[normal.index], label="Normal", alpha=0.6)
+    plt.scatter(anomalies.index, scores.loc[anomalies.index], label="Anomaly", color=(1.0, 0.43, 0.0, 0.8), alpha=0.8)
+
+    plt.xlabel("Time")
+    plt.ylabel("Anomaly score")
+    plt.title(title)
+    plt.legend()
+    plt.grid(True, linestyle="--", alpha=0.25)
+    plt.tight_layout()
+    plt.show()

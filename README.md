@@ -43,7 +43,7 @@ Program pozwala na generowanie wykresów:
 - macierzy korelacji
 
 ### Wykrywanie anomallii
-W oknie Anomallii dostępne są także opcje wykrywania anomallii wybraną metodą. Program tworzy dla danych maskę z danymi uważanymi za anomalie oraz oznacza w oryginalnych danych wiersze, w których one występują. W odpowiedniej zakładce wyświetla się raport prezentujący ilości znalezionych anomalii w zestawie dla każdego sygnału. Po wyborze sygnału oraz turbiny możliwa jest wizualizacja typu Time Series, wraz z oznaczonymi anomaliami. Funkcja usuwania zastępuje wszystkie punkty w zestawie oznaczone jako anomalie wartościami NaN.
+W oknie Anomallii dostępne są także opcje wykrywania anomallii wybraną metodą. Program tworzy dla danych maskę z danymi uważanymi za anomalie oraz oznacza w oryginalnych danych wiersze, w których one występują. W odpowiedniej zakładce wyświetla się raport prezentujący ilości znalezionych anomalii w zestawie dla każdego sygnału. Po wyborze sygnału oraz turbiny możliwa jest wizualizacja typu Time Series, wraz z oznaczonymi anomaliami, a także wizualizacja dla wybranej turbiny prezentująca Anomaly Score w przypadku Isolation Forest oraz wartości Distances dla DBSCAN. Funkcja usuwania zastępuje wszystkie punkty w zestawie oznaczone jako anomalie wartościami NaN.
 
 Program pozwala wykrywanie anomalii metodami:
 - IQR - na podstawie wartości odstających

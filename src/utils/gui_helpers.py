@@ -4,7 +4,7 @@ from tkinter import filedialog, messagebox, ttk
 import pandas as pd
 from app_state import AppState
 from data_processing.anomaly_detection import AnomalyDetector
-from plots import plot_correlation_matrix, plot_data_uptime, plot_variable_boxplot, plot_variable_histogram, plot_variable_timeline, plot_variable_timeseries
+from plots import plot_anomaly_score_timeseries, plot_correlation_matrix, plot_data_uptime, plot_variable_boxplot, plot_variable_histogram, plot_variable_timeline, plot_variable_timeseries
 from wind_farm_data import WindFarmDataset
 
 class DataLoaderGUI:
@@ -426,6 +426,12 @@ class AnomalyDetectionGUI:
             command=self.on_plot_timeseries
         ).pack(side=tk.LEFT, padx=5)
 
+        ttk.Button(
+            testing_frame, 
+            text="Plot Anomaly Score", 
+            command= lambda: self.on_plot_score(method=self.selected_method.get())
+        ).pack(side=tk.LEFT, padx=5)
+
         self.tabs = ttk.Notebook(self.root)
         self.tabs.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
@@ -556,3 +562,21 @@ class AnomalyDetectionGUI:
             return
         turbine = self.selected_turbine.get()
         plot_variable_timeseries(self.df, self.selected_parameter, self.cell_mask, turbine)
+
+    def on_plot_score(self, method: str):
+        if method == "Isolation Forest":
+            score_key = "iforest"
+
+        elif method == "DBSCAN":
+            score_key = "dbscan"
+            method = f"{method} (distances)"
+
+        else:
+            return
+
+        turbine_id = self.selected_turbine.get()        
+        scores = self.detector.scores[score_key][turbine_id]
+        mask = self.detector.row_masks[score_key][turbine_id]
+
+        plot_anomaly_score_timeseries(df=self.df, scores=scores, row_mask=mask, turbine_id=turbine_id, method=method)
+
