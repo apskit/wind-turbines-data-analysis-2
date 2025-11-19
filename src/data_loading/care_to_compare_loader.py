@@ -5,7 +5,7 @@ class CareToCompareLoader(BaseLoader):
 
     def load_all(self) -> pd.DataFrame:
         all_dfs = []
-        csv_files = sorted(self.path.glob("*.csv"))
+        csv_files = sorted(f for f in self.path.glob("*.csv") if f.stem.isdigit())
         
         if not csv_files:
             raise FileNotFoundError(f"No CSV files in folder: {self.path}")
@@ -25,4 +25,48 @@ class CareToCompareLoader(BaseLoader):
             data_frame = self.select_columns(data_frame)
             all_dfs.append(data_frame)
 
-        return pd.concat(all_dfs, ignore_index=False)
+        all_dfs = pd.concat(all_dfs, ignore_index=False)
+
+        all_dfs["event"] = False
+
+        event_info_path = self.path / "event_info.csv"
+
+        if event_info_path:
+            events = self.load_event_file(event_info_path)
+            all_dfs = self.apply_event_labels(all_dfs, events)
+
+        return all_dfs
+    
+
+    def load_event_file(self, path: str) -> pd.DataFrame:
+        events = pd.read_csv(path, sep=";", low_memory=False)
+
+        events["event_start"] = pd.to_datetime(events["event_start"], format="%Y-%m-%d  %H:%M:%S", errors="coerce")
+        events["event_end"] = pd.to_datetime(events["event_end"], format="%Y-%m-%d  %H:%M:%S", errors="coerce")
+
+        events.rename(columns={"asset": "turbine_id"}, inplace=True)
+
+        return events
+
+
+    def apply_event_labels(self, df: pd.DataFrame, events: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+
+        for _, row in events.iterrows():
+            if row["event_label"] != "anomaly":
+                continue
+
+            turbine_id = row["turbine_id"]
+            start = row["event_start"]
+            end = row["event_end"]
+
+            mask = (
+                (df["turbine_id"] == turbine_id) &
+                (df.index >= start) &
+                (df.index <= end)
+            )
+
+            df.loc[mask, "event"] = True
+
+        return df
+

@@ -50,6 +50,10 @@ Program pozwala wykrywanie anomalii metodami:
 - Isolation Forest
 - DBSCAN
 
+Dla zbiorów zaetykietowanych (CareToCompare) dostępne są miary jakości:
+- AUC ROC
+- AUC PR
+
 ### Parametry do wyboru
 Program pozwala na unifikację nazw sygnałów. W tym celu należy umieścić w katalogu `config\signals_dict.json` słownik JSON, na podstawie którego będą modyfikowane nazwy sygnałów.
 

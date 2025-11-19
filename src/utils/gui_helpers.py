@@ -432,6 +432,25 @@ class AnomalyDetectionGUI:
             command= lambda: self.on_plot_score(method=self.selected_method.get())
         ).pack(side=tk.LEFT, padx=5)
 
+        label_eval = tk.Label(testing_frame, text="  |   Evaluation:")
+
+        button_auc_roc = ttk.Button(
+            testing_frame, 
+            text="AUC ROC", 
+            command= lambda: self.on_evaluate_auc(method=self.selected_method.get(), auc_type="AUC ROC")
+        )
+
+        button_auc_pr = ttk.Button(
+            testing_frame, 
+            text="AUC PR", 
+            command= lambda: self.on_evaluate_auc(method=self.selected_method.get(), auc_type="AUC PR")
+        )
+
+        if self.dataset.name == "CareToCompare":
+            label_eval.pack(side=tk.LEFT, pady=6)
+            button_auc_roc.pack(side=tk.LEFT, padx=5)
+            button_auc_pr.pack(side=tk.LEFT, padx=5)
+
         self.tabs = ttk.Notebook(self.root)
         self.tabs.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
@@ -580,3 +599,13 @@ class AnomalyDetectionGUI:
 
         plot_anomaly_score_timeseries(df=self.df, scores=scores, row_mask=mask, turbine_id=turbine_id, method=method)
 
+
+    def on_evaluate_auc(self, auc_type: str, method: str):
+        anomaly_label = ((self.df["status_type_id"] != 0) | (self.df["event"] == True)).astype(int)
+        scores = (self.df["anomaly"]).astype(int)
+
+        if (auc_type == "AUC ROC"):
+            self.detector.compute_auc_roc(anomaly_label, scores, method, plot=True)
+        elif (auc_type == "AUC PR"):
+            self.detector.compute_auc_pr(anomaly_label, scores, method, plot=True)
+        

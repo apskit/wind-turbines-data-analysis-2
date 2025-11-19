@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage, fcluster
-from scipy.spatial.distance import squareform
 
 from utils.file_handler import load_signal_ranges
 
@@ -13,7 +12,7 @@ class WindFarmDataset:
         self.normalized_data_frame = None
         self.correlation_matrix = None
         self.id_cols = ["turbine_id", "record_id", "status_type_id"]
-        self.core_features = ["timestamp", "turbine_id", "is_invalid"]
+        self.core_features = ["timestamp", "turbine_id", "is_invalid", "event"]
 
 
     def get_dataframe(self) -> pd.DataFrame:    

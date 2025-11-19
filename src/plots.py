@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve
 
 
 def get_plot_scope(turbine_id: str) -> str:
@@ -245,7 +246,7 @@ def plot_anomaly_score_timeseries(df: pd.DataFrame, scores: pd.Series, row_mask:
     plot_scope = get_plot_scope(turbine_id)
     title = f"Anomaly scores of {method} for {plot_scope}"
 
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(10, 5), num=title)
     plt.scatter(normal.index, scores.loc[normal.index], label="Normal", alpha=0.6)
     plt.scatter(anomalies.index, scores.loc[anomalies.index], label="Anomaly", color=(1.0, 0.43, 0.0, 0.8), alpha=0.8)
 
@@ -256,3 +257,35 @@ def plot_anomaly_score_timeseries(df: pd.DataFrame, scores: pd.Series, row_mask:
     plt.grid(True, linestyle="--", alpha=0.25)
     plt.tight_layout()
     plt.show()
+
+
+def plot_auc_roc_curve(fpr, tpr, auc: float, method: str):
+    title = f"AUC ROC Curve for {method}"
+
+    plt.figure(figsize=(6, 5), num=title)
+    plt.plot(fpr, tpr, label=f"AUC = {auc:.3f}")
+    plt.plot([0,1], [0,1], linestyle="--", color="gray")
+
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title(title)
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_auc_pr_curve(recall, precision, auc: float, method: str):
+    title = f"AUC PR Curve for {method}"
+
+    plt.figure(figsize=(6, 5), num=title)
+    plt.plot(recall, precision, label=f"AUC-PR = {auc:.3f}")
+
+    plt.xlabel("Recall")
+    plt.ylabel("Precision")
+    plt.title(title)
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+

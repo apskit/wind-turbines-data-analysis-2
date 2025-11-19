@@ -4,7 +4,10 @@ from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.ensemble import IsolationForest
+from sklearn.metrics import average_precision_score, precision_recall_curve, roc_auc_score, roc_curve
 from sklearn.neighbors import NearestNeighbors
+
+from plots import plot_auc_pr_curve, plot_auc_roc_curve
 
 
 class AnomalyDetector:
@@ -225,3 +228,27 @@ class AnomalyDetector:
 
     def get_stats(self, mask_name: str) -> dict:
         return self.stats.get(mask_name, None)
+
+
+    def compute_auc_roc(self, anomalies: pd.Series, scores: pd.Series, method: str, plot: bool = True):
+        anomalies = anomalies.reindex(scores.index).fillna(0)
+
+        auc_roc = roc_auc_score(anomalies, scores)
+
+        if plot:
+            fpr, tpr, thresholds = roc_curve(anomalies, scores)
+            plot_auc_roc_curve(fpr, tpr, auc_roc, method)
+
+        return auc_roc
+    
+
+    def compute_auc_pr(self, anomalies: pd.Series, scores: pd.Series, method: str, plot: bool = True):
+        anomalies = anomalies.reindex(scores.index).fillna(0)
+
+        auc_pr = average_precision_score(anomalies, scores)
+
+        if plot:
+            precision, recall, thresholds = precision_recall_curve(anomalies, scores)
+            plot_auc_pr_curve(recall, precision, auc_pr, method)
+
+        return auc_pr
