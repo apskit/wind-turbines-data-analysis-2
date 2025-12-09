@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve
 
 
 def get_plot_scope(turbine_id: str) -> str:
@@ -75,7 +74,7 @@ def plot_variable_boxplot(df: pd.DataFrame, parameter: str, turbine_id: str = "a
     title = f"Distribution of {parameter} for {plot_scope}"
 
     fig, ax = plt.subplots(figsize=(10, 5), num=f"Distribution Boxplot of {parameter} for {plot_scope}")
-    df.boxplot(column=parameter, by="turbine_id", ax=ax, grid=False)
+    df.boxplot(column=parameter, by="turbine_id", ax=ax, grid=False, flierprops=dict(markerfacecolor='none', markeredgecolor='red'))
     ax.set_title(title)
     ax.set_xlabel("Turbine ID")
     ax.set_ylabel(parameter)
@@ -85,7 +84,7 @@ def plot_variable_boxplot(df: pd.DataFrame, parameter: str, turbine_id: str = "a
     plt.show()
 
 
-def plot_variable_histogram(df: pd.DataFrame, parameter: str, turbine_id: str = "all", bins: int = 30):
+def plot_variable_histogram(df: pd.DataFrame, parameter: str, turbine_id: str = "all"):
     if parameter not in df.columns:
         raise ValueError(f"Column '{parameter}' not found in dataset.")
 
@@ -98,7 +97,7 @@ def plot_variable_histogram(df: pd.DataFrame, parameter: str, turbine_id: str = 
     data = df[parameter].dropna()
 
     fig, ax = plt.subplots(figsize=(10, 5), num=f"Histogram of {parameter} for {plot_scope}")
-    n, bins_edges, patches = ax.hist(data, bins='auto', color="tab:blue", edgecolor="black", alpha=0.7)
+    ax.hist(data, bins='auto', color="tab:blue", edgecolor="black", alpha=0.7)
 
     data_mean = np.mean(data)
     data_median = np.median(data)
@@ -185,6 +184,9 @@ def plot_correlation_matrix(correlation_matrix: pd.DataFrame, plot_labels=True):
         ax.set_yticks(range(correlation_matrix.shape[0]))
         ax.set_yticklabels(short_labels, fontsize=7)
 
+    # for (i, j), val in np.ndenumerate(correlation_matrix.values):
+    #     ax.text(j, i, f"{val:.2f}", va='center', ha='center', fontsize=5, color='black')
+
     plt.title('Correlation Matrix')
     plt.tight_layout()
     plt.show()
@@ -263,7 +265,7 @@ def plot_auc_roc_curve(fpr, tpr, auc: float, method: str):
     title = f"AUC ROC Curve for {method}"
 
     plt.figure(figsize=(6, 5), num=title)
-    plt.plot(fpr, tpr, label=f"AUC = {auc:.3f}")
+    plt.plot(fpr, tpr, label=f"AUC ROC = {auc:.3f}")
     plt.plot([0,1], [0,1], linestyle="--", color="gray")
 
     plt.xlabel("False Positive Rate")
@@ -279,7 +281,7 @@ def plot_auc_pr_curve(recall, precision, auc: float, method: str):
     title = f"AUC PR Curve for {method}"
 
     plt.figure(figsize=(6, 5), num=title)
-    plt.plot(recall, precision, label=f"AUC-PR = {auc:.3f}")
+    plt.plot(recall, precision, label=f"AUC PR = {auc:.3f}")
 
     plt.xlabel("Recall")
     plt.ylabel("Precision")
@@ -288,4 +290,3 @@ def plot_auc_pr_curve(recall, precision, auc: float, method: str):
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
-

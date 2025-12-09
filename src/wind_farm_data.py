@@ -85,11 +85,13 @@ class WindFarmDataset:
 
         num_cols = self.get_numeric_cols_list()
         df_numbers = df[num_cols]
+
         variable_ranges = df_numbers.describe().transpose()
         variable_ranges = variable_ranges[["min", "max", "mean", "std"]]
         variable_ranges.reset_index(inplace=True)
         variable_ranges.rename(columns={"index": "parameter"}, inplace=True)
-        return variable_ranges
+
+        return variable_ranges.round(3)
 
 
     def analyze_overview(self, turbine_id: str | None = None) -> dict:
@@ -152,11 +154,11 @@ class WindFarmDataset:
                 col_vals = df_scaled[col]
                 mask_valid = (~col_vals.isna())
 
-                min_val = col_vals[mask_valid].min()
-                max_val = col_vals[mask_valid].max()
+                min = col_vals[mask_valid].min()
+                max = col_vals[mask_valid].max()
 
                 df_scaled.loc[mask_valid, col] = (
-                    (col_vals[mask_valid] - min_val) / (max_val - min_val)
+                    (col_vals[mask_valid] - min) / (max - min)
                 )
 
         else:
@@ -186,48 +188,37 @@ class WindFarmDataset:
         np.fill_diagonal(corr.values, 1.0)
         cols = corr.columns
 
-        # passing hierarchical clustering
-        dist_matrix = 1 - corr
-        np.fill_diagonal(dist_matrix.values, 0.0)
+        distances_matrix = 1 - corr
+        np.fill_diagonal(distances_matrix.values, 0.0)
 
-        # upper triangle
-        condensed = dist_matrix.values[np.triu_indices_from(dist_matrix.values, k=1)]
-        condensed[condensed < 0] = 0
+        upper_triangle = distances_matrix.values[np.triu_indices_from(distances_matrix.values, k=1)]
+        upper_triangle[upper_triangle < 0] = 0
 
-        linkage_matrix = linkage(condensed, method='average')
+        linkage_matrix = linkage(upper_triangle, method='average')
 
-        # clusters forming
+        # hierarhical clustering
         cluster_labels = fcluster(linkage_matrix, t=1 - threshold, criterion='distance')
 
-        representatives = []
         to_remove = []
         representatives_map = {}
 
         for cluster_id in np.unique(cluster_labels):
-            members = cols[cluster_labels == cluster_id].tolist()
+            cluster_members = cols[cluster_labels == cluster_id].tolist()
 
-            if len(members) == 1:
-                representatives.append(members[0])
+            if len(cluster_members) == 1:
                 continue
 
-            # best signal choice
-            sub_df = df[members]
+            feature_df = df[cluster_members]
+            cluster_representative = feature_df.var().idxmax()
 
-            # highest variance
-            rep = sub_df.var().idxmax()
+            to_remove_in_cluster = [c for c in cluster_members if c != cluster_representative]
+            representatives_map[cluster_representative] = to_remove_in_cluster
 
-            to_remove_in_cluster = [c for c in members if c != rep]
-            representatives_map[rep] = to_remove_in_cluster
-
-            representatives.append(rep)
-            to_remove.extend([c for c in members if c != rep])
+            to_remove.extend([c for c in cluster_members if c != cluster_representative])
 
         result = {
-            "n_clusters": len(np.unique(cluster_labels)),
             "representatives_map": representatives_map,
-            "representatives": representatives,
-            "to_remove": to_remove,
-            "threshold": threshold
+            "to_remove": to_remove
         }
 
         if not preview:
@@ -235,3 +226,4 @@ class WindFarmDataset:
             self.data_frame.drop(columns=to_remove, inplace=True)
 
         return result
+    

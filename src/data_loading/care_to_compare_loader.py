@@ -31,7 +31,7 @@ class CareToCompareLoader(BaseLoader):
 
         event_info_path = self.path / "event_info.csv"
 
-        if event_info_path:
+        if event_info_path.exists():
             events = self.load_event_file(event_info_path)
             all_dfs = self.apply_event_labels(all_dfs, events)
 
@@ -69,4 +69,3 @@ class CareToCompareLoader(BaseLoader):
             df.loc[mask, "event"] = True
 
         return df
-

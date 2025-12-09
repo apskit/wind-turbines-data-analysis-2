@@ -16,7 +16,6 @@ class AnomalyDetector:
         self.df = dataset.get_dataframe()
 
         self.masks: dict[str, pd.Series] = {}
-        self.stats: dict[str, dict] = {}
         self.scores: dict[str, dict[str, pd.Series]] = {}
         self.row_masks: dict[str, dict[str, pd.Series]] = {}
 
@@ -58,25 +57,16 @@ class AnomalyDetector:
         self.masks["iqr_row"] = anomaly_mask_rows
         self.masks["iqr_cell"] = anomaly_mask_cells
 
-        num_anomalies = anomaly_mask_rows.sum()
-        total_rows = len(anomaly_mask_rows)
-
-        self.stats["iqr"] = {
-            "total_rows": total_rows,
-            "anomalous_rows": int(num_anomalies),
-            "percentage_anomalous_rows": float(num_anomalies / total_rows * 100),
-            "anomalous_cells": int(anomaly_mask_cells.sum().sum()),
-            "factor": factor
-        }
-
         return anomaly_mask_rows, anomaly_mask_cells
 
 
-    def detect_isolation_forest(self, contamination: float = 0.01) -> tuple[pd.Series, pd.DataFrame]:
+    def detect_isolation_forest(self, contamination: float = 0.1) -> tuple[pd.Series, pd.DataFrame]:
         self.df = self.dataset.get_dataframe()
         num_cols = self.dataset.get_numeric_cols_list()
+
         anomaly_mask_rows = pd.Series(False, index=self.df.index)
         anomaly_mask_cells = pd.DataFrame(False, index=self.df.index, columns=num_cols)
+
         self.scores.setdefault("iforest", {})
         self.row_masks.setdefault("iforest", {})
 
@@ -86,10 +76,8 @@ class AnomalyDetector:
             # input_sample = input_sample.fillna(input_sample.median())
 
             model = IsolationForest(
-                contamination=contamination, # 'auto'
-                random_state=42,
+                contamination=contamination,
                 n_estimators=200,
-                bootstrap=False,
                 )
             
             preds = model.fit_predict(input_sample)
@@ -111,13 +99,6 @@ class AnomalyDetector:
         self.masks["iforest_row"] = anomaly_mask_rows
         self.masks["iforest_cell"] = anomaly_mask_cells
 
-        self.stats["iforest"] = {
-            "total_rows": len(self.df),
-            "anomalous_rows": int(anomaly_mask_rows.sum()),
-            "percentage_anomalous_rows": float(anomaly_mask_rows.sum() / len(self.df) * 100),
-            "anomalous_cells": int(anomaly_mask_cells.sum().sum()),
-        }
-
         return anomaly_mask_rows, anomaly_mask_cells
 
 
@@ -127,16 +108,17 @@ class AnomalyDetector:
         distances, _ = neighbors.kneighbors(sample)
         k_dist = np.sort(distances[:, -1])
 
-        eps = np.percentile(k_dist, 95)
+        eps = np.percentile(k_dist, 96)
         return eps
 
 
-    def detect_dbscan(self, eps: float = 0.5, min_samples: int = 100) -> tuple[pd.Series, pd.DataFrame]:
+    def detect_dbscan(self, eps: float = 0.5, min_samples: int = 10) -> tuple[pd.Series, pd.DataFrame]:
         self.df = self.dataset.get_dataframe()
         num_cols = self.dataset.get_numeric_cols_list()
 
         anomaly_mask_rows = pd.Series(False, index=self.df.index)
         anomaly_mask_cells = pd.DataFrame(False, index=self.df.index, columns=num_cols)
+
         self.scores.setdefault("dbscan", {})
         self.row_masks.setdefault("dbscan", {})
 
@@ -150,8 +132,7 @@ class AnomalyDetector:
             scaler = StandardScaler()
             input_sample = scaler.fit_transform(input_sample)
 
-            # pca = PCA(n_components=3, random_state=42)
-            pca = PCA(n_components=0.95, random_state=42)
+            pca = PCA(n_components=0.95)
             input_sample = pca.fit_transform(input_sample)
 
             n_components = pca.n_components_
@@ -174,14 +155,13 @@ class AnomalyDetector:
             anomaly_mask_cells.loc[anomalous_indices, :] = True
 
             distances = np.zeros(len(input_sample))
-            core_mask = (labels != -1)
-            if core_mask.sum() > 0:
-                core_points = input_sample[core_mask]
-                neighbours = NearestNeighbors(n_neighbors=1).fit(core_points)
-                dist, _ = neighbours.kneighbors(input_sample)
-                distances = dist.flatten()
-            else:
-                distances[:] = 1
+            
+            clustered_points_mask = (labels != -1)
+            core_points = input_sample[clustered_points_mask]
+            neighbours = NearestNeighbors(n_neighbors=1).fit(core_points)
+
+            dist, _ = neighbours.kneighbors(input_sample)
+            distances = dist.flatten()
 
             distances = distances / distances.max()
 
@@ -194,15 +174,6 @@ class AnomalyDetector:
 
         self.masks["dbscan_row"] = anomaly_mask_rows
         self.masks["dbscan_cell"] = anomaly_mask_cells
-
-        self.stats["dbscan"] = {
-            "total_rows": len(self.df),
-            "anomalous_rows": int(anomaly_mask_rows.sum()),
-            "percentage_anomalous_rows": float(anomaly_mask_rows.sum() / len(self.df) * 100),
-            "anomalous_cells": int(anomaly_mask_cells.sum().sum()),
-            "eps": eps,
-            "min_samples": min_samples
-        }
 
         return anomaly_mask_rows, anomaly_mask_cells
 
@@ -224,10 +195,6 @@ class AnomalyDetector:
         self.df.loc[:, mask.columns] = self.df.loc[:, mask.columns].mask(mask, np.nan)
 
         return removed_count
-
-
-    def get_stats(self, mask_name: str) -> dict:
-        return self.stats.get(mask_name, None)
 
 
     def compute_auc_roc(self, anomalies: pd.Series, scores: pd.Series, method: str, plot: bool = True):

@@ -7,6 +7,7 @@ from data_processing.anomaly_detection import AnomalyDetector
 from plots import plot_anomaly_score_timeseries, plot_correlation_matrix, plot_data_uptime, plot_variable_boxplot, plot_variable_histogram, plot_variable_timeline, plot_variable_timeseries
 from wind_farm_data import WindFarmDataset
 
+
 class DataLoaderGUI:
     def __init__(self, state: AppState):
         self.app_state = state
@@ -28,7 +29,6 @@ class DataLoaderGUI:
 
         ttk.Label(self.root, text="Columns to load (optional):").pack(pady=4)
         self.columns_text = tk.Text(self.root, height=4, width=50)
-        # self.columns_text.insert("1.0", "timestamp, wind_speed")
         self.columns_text.pack()
 
         self.show_preview = tk.BooleanVar()
@@ -58,7 +58,6 @@ class DataLoaderGUI:
             dataset = self.app_state.get_dataset()
             data_frame = dataset.get_dataframe()
             self.output_label.config(text=f"Loaded dataset of: {len(data_frame)} records, {len(data_frame.columns)} columns")
-            # messagebox.showinfo("Success", f"Successfully loaded dataset ({len(data_frame)} records).")
 
             if self.show_preview.get():
                 self.preview_dataframe(data_frame)
@@ -601,7 +600,8 @@ class AnomalyDetectionGUI:
 
 
     def on_evaluate_auc(self, auc_type: str, method: str):
-        anomaly_label = ((self.df["status_type_id"] != 0) | (self.df["event"] == True)).astype(int)
+        # anomaly_label = ((self.df["status_type_id"] != 0) | (self.df["event"] == True)).astype(int)
+        anomaly_label = ((self.df["status_type_id"] != 0)).astype(int)
         scores = (self.df["anomaly"]).astype(int)
 
         if (auc_type == "AUC ROC"):

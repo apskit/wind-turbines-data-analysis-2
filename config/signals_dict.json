@@ -31,7 +31,7 @@
     "sensor_5_max": "pitch_angle_max",
     "sensor_5_min": "pitch_angle_min",
     "sensor_5_std": "pitch_angle_standard_deviation_deg",
-    "sensor_6_avg": "temp_in_the_hub_controller_avg_degc",
+    "sensor_6_avg": "temp_hub_degc",
     "sensor_7_avg": "temp_in_the_top_nacelle_controller_avg_degc",
     "sensor_8_avg": "temp_in_the_choke_coils_on_the_vcs_section_avg_degc",
     "sensor_9_avg": "temp_on_the_vcp_board_avg_degc",

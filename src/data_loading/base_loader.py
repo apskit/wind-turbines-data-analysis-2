@@ -63,7 +63,7 @@ class BaseLoader:
         for col in df.select_dtypes(include='number').columns:
             is_nan = df[col].isna()
 
-            # Next group starts when value change
+            # value change -> next group 
             group_id = (is_nan != is_nan.shift(1)).cumsum()
 
             group_lengths = group_id.groupby(group_id).transform('count')
@@ -84,6 +84,7 @@ class BaseLoader:
             imputer = KNNImputer(n_neighbors=n_neighbors, weights='distance')
 
             imputed_values = imputer.fit_transform(df[numeric_cols])
+            
             df_imputed = pd.DataFrame(
                 imputed_values, 
                 index=df.index,
