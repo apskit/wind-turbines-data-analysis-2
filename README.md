@@ -14,15 +14,16 @@ Python 3.10
 
 ## Wykorzystanie
 ### Wczytywanie danych
-Program pozwala na wskazanie ścieżki do folderu, w którym znajdują się pliki `.csv` zawierające dane z turbin. Po wczytaniu danych należy wskazać typ zestawu - Kelmarsh, Penmanshiel lub CareToCompare. Można także opcjonalnie wybrać, które parametry mają zostać załadowane wypisując je po przecinku w odpowiednim polu. Wczytywane dane są standaryzowane, a błędne wartości usuwane.
+Program pozwala na wskazanie ścieżki do folderu, w którym znajdują się pliki `.csv` zawierające dane z turbin. Po wczytaniu danych należy wskazać typ zestawu - Kelmarsh, Penmanshiel lub CareToCompare. Można także opcjonalnie wybrać, które parametry mają zostać załadowane wypisując je po przecinku w odpowiednim polu. Wczytywane dane są standaryzowane, a błędne wartości usuwane. Punkty czasowe zawierające parametry przekraczające dopuszczalne wartości są oznaczane jako nieprawidłowe. Pojedyncze brakujące wartości są uzupełniane metodą interpolacji liniowej (docelowo KNN).
 
 ### Analiza danych
 Po wczytaniu program pozwala na przeprowadzenie analizy danych po względem:
 - dostępności:
     - liczba parametrów
     - procnt brakujących wartości
-    - liczba datapoints
+    - liczba datapointów
     - procent data uptime
+    - procent datapointów z przynajmniej jedną błędną wartością
 
 - zakresów czasowych:
     - pierwszy timestamp
@@ -32,10 +33,13 @@ Po wczytaniu program pozwala na przeprowadzenie analizy danych po względem:
 - zakresów zmiennych:
     - zakresy wartości
 
+W oknie Analizy dostępne są także opcje wizualizacji. Można je wywoływać dla danych wstępnie przetworzonych lub znormalizowanych wybraną metodą. Narzędzie do analizy korelacji pozwala na wizualizację macierzy korelacji oraz usuwanie sygnałów silnie skorelowanych, wraz z ich podglądem w formie analizy sygnałów reprezentatywnych i sygnałów  z nimi skorelowanych.
+
 ### Wizualizacja
 Program pozwala na generowanie wykresów:
-    - dostępności danych w czasie
-    - zakresu zmiennych - Boxplot/Histogram
+- dostępności danych w czasie
+- dostępność wartości sygnałów w czasie
+- zakresu zmiennych - Boxplot/Histogram
 
 ### Parametry do wyboru
 Program pozwala na unifikację nazw sygnałów. W tym celu należy umieścić w katalogu `config\signals_dict.json` słownik JSON, na podstawie którego będą modyfikowane nazwy sygnałów.
@@ -54,6 +58,19 @@ Program pozwala na unifikację nazw sygnałów. W tym celu należy umieścić w 
             "id": "record_id"    
         }
     }
+```
+
+### Wprowadzanie zakresu wartości
+Program pozwala na wprowadzenie dopuszczalnych zakresów sygnałów. W tym celu należy umieścić w katalogu `config\signals_ranges.json` plik JSON, na podstawie którego punkty czasowe posiadające sygnały nie mieszczące się w zadanym zakresie będą oznaczane jako nieprawidłowe i będą mogły być filtrowane..
+
+#### Przykładowy plik JSON
+```json
+{
+    "power": [-10, 2500],
+    "wind_speed": [0, 30],
+    "wind_direction": [0, 360]
+}
+
 ```
 
 

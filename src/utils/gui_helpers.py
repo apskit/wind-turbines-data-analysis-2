@@ -3,26 +3,29 @@ from tkinter import filedialog, messagebox, ttk
 
 import pandas as pd
 from app_state import AppState
-from plots import plot_data_uptime, plot_variable_boxplot, plot_variable_histogram
+from plots import plot_correlation_matrix, plot_data_uptime, plot_variable_boxplot, plot_variable_histogram, plot_variable_timeline
+from wind_farm_data import WindFarmDataset
 
 class DataLoaderGUI:
     def __init__(self, state: AppState):
         self.app_state = state
         self.root = tk.Tk()
-        self.root.title("SCADA Dataset Loader")
+        self.root.title("Wind Farm Dataset Loader")
         self.root.geometry("480x420")
 
-        self.path_to_data_folder = tk.StringVar()
-        tk.Label(self.root, text="Path to dataset folder:").pack(pady=4)
-        tk.Entry(self.root, textvariable=self.path_to_data_folder, width=55).pack()
-        tk.Button(self.root, text="Select folder", command=self.select_folder).pack(pady=5)
+        ttk.Label(self.root, text="Dataset Loader", font=("Segoe UI", 13, "bold")).pack(pady=10)
 
-        tk.Label(self.root, text="Dataset type:").pack(pady=4)
+        self.path_to_data_folder = tk.StringVar()
+        ttk.Label(self.root, text="Path to dataset folder:").pack(pady=4)
+        ttk.Entry(self.root, textvariable=self.path_to_data_folder, width=55).pack()
+        ttk.Button(self.root, text="Select folder", command=self.select_folder).pack(pady=5)
+
+        ttk.Label(self.root, text="Dataset type:").pack(pady=4)
         self.dataset_type = tk.StringVar(value="Kelmarsh")
         ttk.Combobox(self.root, textvariable=self.dataset_type,
                      values=["Kelmarsh", "Penmanshiel", "CareToCompare"]).pack()
 
-        tk.Label(self.root, text="Columns to load (optional):").pack(pady=4)
+        ttk.Label(self.root, text="Columns to load (optional):").pack(pady=4)
         self.columns_text = tk.Text(self.root, height=4, width=50)
         # self.columns_text.insert("1.0", "timestamp, wind_speed")
         self.columns_text.pack()
@@ -31,7 +34,7 @@ class DataLoaderGUI:
         checkbox = tk.Checkbutton(self.root, text="Show data preview", variable=self.show_preview)
         checkbox.pack(pady=10)
 
-        tk.Button(self.root, text="Load dataset", command=self.load_data).pack(pady=15)
+        ttk.Button(self.root, text="Load dataset", command=self.load_data).pack(pady=15)
 
         self.output_label = tk.Label(self.root, text="", fg="green")
         self.output_label.pack()
@@ -54,7 +57,7 @@ class DataLoaderGUI:
             dataset = self.app_state.get_dataset()
             data_frame = dataset.get_dataframe()
             self.output_label.config(text=f"Loaded dataset of: {len(data_frame)} records, {len(data_frame.columns)} columns")
-            messagebox.showinfo("Success", f"Successfully loaded dataset ({len(data_frame)} records).")
+            # messagebox.showinfo("Success", f"Successfully loaded dataset ({len(data_frame)} records).")
 
             if self.show_preview.get():
                 self.preview_dataframe(data_frame)
@@ -115,8 +118,9 @@ class DataLoaderGUI:
 
 
 class DataAnalysisGUI:
-    def __init__(self, app_state, dataset):
+    def __init__(self, app_state: AppState, dataset: WindFarmDataset):
         self.app_state = app_state
+        self.dataset = dataset
         self.df = dataset.get_dataframe()
         self.selected_parameter = None
 
@@ -135,6 +139,7 @@ class DataAnalysisGUI:
         turbines_list = dataset.get_turbines_list()
         turbines = ["all"] + sorted(turbines_list)
         ttk.Combobox(options_frame, textvariable=self.selected_turbine, values=turbines).pack(side=tk.LEFT, pady=6)
+
 
         button_frame = ttk.Frame(self.root)
         button_frame.pack(pady=5)
@@ -158,6 +163,12 @@ class DataAnalysisGUI:
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
+            button_frame, 
+            text="Plot Variable Availability", 
+            command=self.on_plot_timeline
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
             button_frame,
             text="Plot Variable Ranges Boxplot",
             command=self.on_plot_boxplot
@@ -168,6 +179,43 @@ class DataAnalysisGUI:
             text="Plot Variable Ranges Histogram",
             command=self.on_plot_histogram
         ).pack(side=tk.LEFT, padx=5)
+
+
+        normalization_frame = ttk.Frame(self.root)
+        normalization_frame.pack(pady=5)
+
+        ttk.Button(
+            normalization_frame, 
+            text="Plot Correlation Matrix", 
+            command=lambda: [dataset.set_correlation_matrix(), plot_correlation_matrix(dataset.get_correlation_matrix())]
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            normalization_frame, 
+            text="Correlation Analysis", 
+            command=lambda: self.run_correlation_analysis(preview=True)
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            normalization_frame, 
+            text="Remove Correlated Signals", 
+            command=lambda: self.run_correlation_analysis(preview=False)
+        ).pack(side=tk.LEFT, padx=5)
+        tk.Label(normalization_frame, text="  |  ").pack(side=tk.LEFT, pady=6)
+
+        tk.Label(normalization_frame, text="Dataset for plotting:").pack(side=tk.LEFT, pady=6)
+        self.selected_dataset = tk.StringVar(value="preprocessed")
+        datasets_list = ["preprocessed", "z-score normalization", "min-max normalization", "robust scaling"]
+        ttk.Combobox(normalization_frame, textvariable=self.selected_dataset, values=datasets_list).pack(side=tk.LEFT, pady=6)
+
+        ttk.Button(
+            normalization_frame, 
+            text="Change", 
+            command=lambda: self.change_dataset(dataset, type=self.selected_dataset.get())
+        ).pack(side=tk.LEFT, padx=5)
+
+        self.dataset_change_label = tk.Label(normalization_frame, text="", fg="green")
+        self.dataset_change_label.pack()
 
         self.tabs = ttk.Notebook(self.root)
         self.tabs.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -252,14 +300,69 @@ class DataAnalysisGUI:
       
     def on_plot_boxplot(self):
         if not self.selected_parameter:
-            messagebox.showwarning("No parameter selected", "Select a parameter from Variable Analysis tab first.")
+            messagebox.showwarning("No parameter selected", "Select signal from Variable Analysis tab first.")
             return
         turbine = self.selected_turbine.get()
         plot_variable_boxplot(self.df, self.selected_parameter, turbine)
 
     def on_plot_histogram(self):
         if not self.selected_parameter:
-            messagebox.showwarning("No parameter selected", "Select a parameter from Variable Analysis tab first.")
+            messagebox.showwarning("No parameter selected", "Select signal from Variable Analysis tab first.")
             return
         turbine = self.selected_turbine.get()
         plot_variable_histogram(self.df, self.selected_parameter, turbine)
+
+    def on_plot_timeline(self):
+        if not self.selected_parameter:
+            messagebox.showwarning("No parameter selected", "Select signal from Variable Ranges tab first.")
+            return
+        turbine = self.selected_turbine.get()
+        plot_variable_timeline(self.df, self.selected_parameter, turbine)
+
+    def change_dataset(self, dataset: WindFarmDataset, type: str):
+        if type == "preprocessed":
+            self.df = dataset.get_dataframe()
+
+        else:
+            normalization_type = type.split()[0].lower().replace('-', '_')
+            dataset.normalize_data(normalization_type)
+            
+            self.df = dataset.get_dataframe_normalized() 
+        
+        self.dataset_change_label.config(text=f"Loaded {type} dataset")
+
+
+    def run_correlation_analysis(self, preview: bool = True):
+        try:
+            correlation_analysis = self.dataset.remove_correlated_signals(threshold=0.95, preview=preview)
+
+            if preview:
+                analysis_key = f"correlation_preview"
+                if analysis_key in self.analysis_frames:
+                    self.tabs.forget(self.analysis_frames[analysis_key])
+                    del self.analysis_frames[analysis_key]
+
+                frame = ttk.Frame(self.tabs)
+                self.analysis_frames[analysis_key] = frame
+                self.tabs.add(frame, text="Correlation Removal Preview")
+
+                results_for_df = []
+                for rep, removed_list in correlation_analysis["representatives_map"].items():
+                    results_for_df.append({
+                        "Representatives": rep,
+                        "To remove": ", ".join(removed_list)
+                    })
+                
+                df_result = pd.DataFrame(results_for_df)
+                self.display_dataframe(df_result, frame)
+                self.tabs.select(frame)
+
+            else:
+                self.df = self.dataset.get_dataframe()
+                messagebox.showinfo("Correlation Removal Completed",
+                    f"Removed {len(correlation_analysis['to_remove'])} correlated signals."
+                )
+
+        except Exception as e:
+            messagebox.showerror("Correlation analysis error", str(e))
+
